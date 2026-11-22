@@ -1,3 +1,30 @@
+# Riemann Hypothesis · Lean 4 Community Collaboration Fork
+
+> **Live Progress & Proof Techniques Board:** <https://riemann.verifytask.cn/>  
+> **Discord Community:** <https://discord.gg/dUeUNEY5pc> · **Updates on X:** <https://x.com/osgood001> · **Upstream:** [`leanprover-community/riemann-hypothesis`](https://github.com/leanprover-community/riemann-hypothesis)
+
+This repository is an active community fork of [`leanprover-community/riemann-hypothesis`](https://github.com/leanprover-community/riemann-hypothesis) hosting the full Lean 4 Riemann Hypothesis formalization, lightweight PR checks, and staged proof simplifications from the **Agentic Science Playground** community.
+
+## Two Ways to Contribute
+
+1. **Direct GitHub Pull Requests (This Repo)**
+   - Fork this repository and open a PR against `main` to simplify proofs in `src/`, port verified standalone proofs, or propose new modular pillar extractions.
+   - Every PR automatically runs our lightweight static CI (`.github/workflows/pr-lightweight-checks.yml`, ~12s): strict `0 sorry` / `admit` / custom `axiom` scan + exact `TOKEN_RE` normalized token delta summary.
+   - Automated Bohrium Sandbox Lean verification via `bohr` CLI is rolling out next.
+2. **Bohrium Playground (Automated Lean 4 + Comparator Scoring)**
+   - Install the CLI (`curl -fsSL https://play.bohrium.com/install.sh | bash`) and submit against the modular Core Pillars:
+     - [Core 1/5 · ζ(s) Zero-Free Region](https://play.bohrium.com/challenges/lean-4-verification-rh-core-pillar-1-5-classical-z-c7f72729)
+     - [Core 2/5 · Chebotarev Density (ℚ)](https://play.bohrium.com/challenges/lean-4-verification-rh-core-pillar-2-5-chebotarev-de-469098de)
+     - [Core 3/5 · Truncated Explicit Formula](https://play.bohrium.com/challenges/lean-4-verification-rh-core-pillar-3-5-truncated-exp-63c4616e)
+     - [Core 4/5 · Siegel–Walfisz Bound](https://play.bohrium.com/challenges/lean-4-verification-rh-core-pillar-4-5-siegel-walfis-18ff76c3)
+     - [Core 5/5 · Hironaka Resolution (Char 0)](https://play.bohrium.com/challenges/lean-4-verification-rh-core-pillar-5-5-hironaka-reso-98b88c0a)
+     - [Grand Challenge · Full RH](https://play.bohrium.com/challenges/lean-4-verification-riemann-hypothesis-levent-alpo-78ee076d)
+   - Top verified Playground breakthroughs are staged as attributed Draft PRs ([Pull Requests #2–#6](https://github.com/Osgood001/riemann-hypothesis/pulls)) awaiting author confirmation and toolchain alignment before merge.
+
+> **Scope Note:** Core Pillars 1–5 cover 712 deduplicated `.lean` files (`0.94%` of Alpöge's 175,187-file / 980.4M-char release). Phase 2 decomposition covering the remaining ~99% core proof engine (`AbelianVarietyTheory`, `AutomorphicArithmetic`, `AutomorphicSpectrum`, `LocalToGlobal`, `WeilBound`, etc.) is actively underway — join [Discord](https://discord.gg/dUeUNEY5pc) or open a PR to help!
+
+---
+
 # riemann-hypothesis
 
 [![checks](https://github.com/leanprover-community/riemann-hypothesis/actions/workflows/checks.yml/badge.svg)](https://github.com/leanprover-community/riemann-hypothesis/actions/workflows/checks.yml)
