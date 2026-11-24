@@ -89,24 +89,24 @@ jobs:
         if: steps.gate.outputs.ok == 'true' && (env.MODE == 'scan' || steps.prep.outputs.rows != '0')
         env:
           KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          HAS_OAUTH: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
         run: |
-          if [ -z "$KEY" ]; then echo "no ANTHROPIC_API_KEY; the action will use CLAUDE_CODE_OAUTH_TOKEN"; exit 0; fi
+          if [ -z "$KEY" ]; then echo "use=oauth" >> "$GITHUB_OUTPUT"; echo "no ANTHROPIC_API_KEY; using CLAUDE_CODE_OAUTH_TOKEN"; exit 0; fi
           code=$(curl -s -o keycheck.json -w '%{http_code}' https://api.anthropic.com/v1/messages \
             -H "x-api-key: $KEY" -H "anthropic-version: 2023-06-01" -H "content-type: application/json" \
             -d '{"model":"claude-haiku-5-5","max_tokens":1,"messages":[{"role":"user","content":"ping"}]}')
           msg=$(node -e "try{const r=require('./keycheck.json');console.log(r.error?r.error.type+': '+r.error.message:'ok')}catch{console.log('unreadable response')}")
           rm -f keycheck.json
           echo "Anthropic API: HTTP $code - $msg"
-          if [ "$code" != "200" ]; then
-            echo "### pr120-cloud: the Anthropic API rejected the key (HTTP $code): $msg" >> "$GITHUB_STEP_SUMMARY"
-            exit 1
-          fi
+          if [ "$code" = "200" ]; then echo "use=api" >> "$GITHUB_OUTPUT";
+          elif [ "$HAS_OAUTH" = "true" ]; then echo "use=oauth" >> "$GITHUB_OUTPUT"; echo "### pr120-cloud: API key rejected (HTTP $code: $msg); using CLAUDE_CODE_OAUTH_TOKEN instead" >> "$GITHUB_STEP_SUMMARY";
+          else echo "use=none" >> "$GITHUB_OUTPUT"; echo "### pr120-cloud skipped Claude: the Anthropic API rejected the key (HTTP $code): $msg" >> "$GITHUB_STEP_SUMMARY"; fi
 
       - name: Claude Code
-        if: steps.gate.outputs.ok == 'true' && (env.MODE == 'scan' || steps.prep.outputs.rows != '0')
+        if: steps.gate.outputs.ok == 'true' && (env.MODE == 'scan' || steps.prep.outputs.rows != '0') && steps.keycheck.outputs.use != 'none'
         uses: anthropics/claude-code-action@v1
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          anthropic_api_key: ${{ steps.keycheck.outputs.use == 'api' && secrets.ANTHROPIC_API_KEY || '' }}
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.PR120_PAT }}
           prompt: |
