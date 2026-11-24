@@ -1,16 +1,19 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-24 19:32 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-24 21:32 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
 ## Summary
-24 merged, 0 open, 5 closed (of the last 29).
+27 merged, 0 open, 5 closed (of the last 32).
 
 ## Open PRs
 _none_
 
 ## Merged (most recent first)
+- [#1143](https://github.com/rohanarun/riemann-hypothesis/pull/1143) Fix Development.AutomorphicArithmetic.Foundations.Convolution.BlockHeckeSlices.CuspidalNormBounds.Bundle0003, merged 2026-11-24 20:03
+- [#1141](https://github.com/rohanarun/riemann-hypothesis/pull/1141) Fix Development.AutomorphicArithmetic.Foundations.Convolution.BlockHeckeSlices.SliceBig, merged 2026-11-24 20:03
+- [#1140](https://github.com/rohanarun/riemann-hypothesis/pull/1140) Fix Development.AutomorphicArithmetic.Foundations.Convolution.BlockHeckeSlices.CuspidalNormBounds.SliceShift, merged 2026-11-24 20:03
 - [#1121](https://github.com/rohanarun/riemann-hypothesis/pull/1121) Fix Development.AutomorphicArithmetic.Foundations.Convolution.BlockHeckeSlices.DatCons, merged 2026-11-24 18:59
 - [#1120](https://github.com/rohanarun/riemann-hypothesis/pull/1120) Fix Development.AutomorphicArithmetic.Foundations.Convolution.BlockHeckeSlices.CommuteCenterRtInfGL, merged 2026-11-24 18:58
 - [#1119](https://github.com/rohanarun/riemann-hypothesis/pull/1119) Fix Development.AutomorphicSpectrum.Proofs.GeometryProofs.SemiabelianLieMetricHeight, merged 2026-11-24 18:58
@@ -50,6 +53,7 @@ _none_
 
 ## Recent log
 ```
+2026-11-24 21:32 UC sweep: #1140 #1141 #1143 MERGED; CentreSplitting FP. dualMap 16-module commit (wt/w33) DROPPED: rmsnorm landed the same family fix (baaefa3bce, 17 modules) at 19:36 while our review was paused by a rate limit. Cloud scan run 45468331657: 8 shards in ~27 min (288 replaced findings in 95 files), but its Claude launched fixers in the background and ended -> nothing published; CLOU
 2026-11-24 19:29 family sweep: dualMap alias capture in 25 more blocked files (8 claimed by #18, 1 use skipped where the original saw the alias on main) -> one 16-module commit 30e710db37 in wt/w33 (45 lines), adversarial review running before publish. UC family: 4 more files -> fast-fix wf_27ab1e83-bed (w34-w37). FiniteNotIsUnitOneAddSmul row: already fixed (#598, eb4581be2c). Local scanner stopp
 2026-11-24 19:14 cloud run #3 (45467419759): SUCCESS end to end, API key OK (HTTP 200), Claude 5 turns, USD 0.14, no PR (2 Open rows Bundle0059/Bundle0367; likely stale/no defensible fix). Added a Report step printing Claude's closing summary.
 2026-11-24 19:09 cloud test runs 45466386679/45466917708: setup OK (gate, checkout, bootstrap, prep found 2 Open rows); Anthropic API rejected the key: 'credit balance is too low'. Workflow now skips Claude cleanly (or falls back to CLAUDE_CODE_OAUTH_TOKEN) when the key is rejected.
@@ -61,5 +65,4 @@ _none_
 2026-11-24 18:07 change Updated 2026-11-24 18:03 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
 2026-11-24 18:00 #1090 (Bundle1447 restored to the #952 version) MERGED (user report). Totals: merged #964 #974 #1030 #1052 #1088 #1089 #1090.
 2026-11-24 17:54 change Updated 2026-11-24 17:30 UTC|look-ahead c1ecc54fd521: no free rows (open 0 + look-ahead 0: none)
-2026-11-24 17:47 #1088 and #1089 MERGED (user report). List history (54 versions since 10:40) shows both rows came only from old sessions: Bundle1447:348 only while 74f1320f2e (pre-#952) was listed, gone from 13:58 when fresh sessions covered all 4 shards; ZetaIntegral:89 only while fbb0941754 was listed (skeptic agreed: stale). #1089 therefore risked regressing a compiling module (MulEquiv.map_on
 ```
