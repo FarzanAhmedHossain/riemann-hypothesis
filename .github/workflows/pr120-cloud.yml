@@ -35,16 +35,32 @@ jobs:
       GIT_NAME: ${{ github.repository_owner }}
       GIT_EMAIL: ${{ github.repository_owner_id }}+${{ github.repository_owner }}@users.noreply.github.com
     steps:
+      - name: Check secrets (skip quietly until they are added)
+        id: gate
+        env:
+          HAS_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+          HAS_PAT: ${{ secrets.PR120_PAT != '' }}
+        run: |
+          if [ "$HAS_KEY" != "true" ] || [ "$HAS_PAT" != "true" ]; then
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "### pr120-cloud skipped: add the ANTHROPIC_API_KEY and PR120_PAT secrets (see README on the automation branch)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Check out the toolkit (automation branch)
+        if: steps.gate.outputs.ok == 'true'
         uses: actions/checkout@v4
         with:
           ref: automation
 
       - uses: actions/setup-node@v4
+        if: steps.gate.outputs.ok == 'true'
         with:
           node-version: "22"
 
       - name: Restore the clone and run state
+        if: steps.gate.outputs.ok == 'true'
         uses: actions/cache@v4
         with:
           path: |
@@ -54,11 +70,12 @@ jobs:
           restore-keys: pr120-state-
 
       - name: Bootstrap
+        if: steps.gate.outputs.ok == 'true'
         run: bash tools/bootstrap.sh
 
       - name: Prepare rows (fix mode)
         id: prep
-        if: env.MODE == 'fix'
+        if: steps.gate.outputs.ok == 'true' && env.MODE == 'fix'
         run: |
           node tools/combined-prep.mjs --max 6 > runs/fast-args.json 2> runs/prep.log || true
           tail -3 runs/prep.log
@@ -67,7 +84,7 @@ jobs:
           echo "### pr120-cloud: $n free row(s)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Claude Code
-        if: env.MODE == 'scan' || steps.prep.outputs.rows != '0'
+        if: steps.gate.outputs.ok == 'true' && (env.MODE == 'scan' || steps.prep.outputs.rows != '0')
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
