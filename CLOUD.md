@@ -4,6 +4,12 @@ The workflow runs `tools/bootstrap.sh`, prepares work, and then asks Claude Code
 
 At the end, append a short report to `$GITHUB_STEP_SUMMARY`: each row or file, what you did, and the PR number if you published.
 
+**This is a non-interactive run: it ends when your turn ends, and any agent still running is killed.**
+- Never start subagents in the background, never schedule follow-ups, and never end a turn saying you will check back later.
+- To run several subagents in parallel, send their Agent calls in one message, without `run_in_background`, so they run in the foreground. That message returns only when all of them have finished.
+- Publish or verify each result, and write the final report. Only then finish.
+- On 2026-11-24 a run launched 8 fixers in the background and ended its turn, so nothing was published.
+
 ## MODE=fix: rows in `runs/fast-args.json`
 The workflow already ran `node tools/combined-prep.mjs --max 6 > runs/fast-args.json`. That picked PR120-BUGS.md rows that:
 - no open PR touches,
