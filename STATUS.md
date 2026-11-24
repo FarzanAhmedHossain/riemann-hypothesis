@@ -1,6 +1,6 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-24 18:40 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-24 18:51 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
@@ -40,7 +40,7 @@ Updated 2026-11-24 18:40 UTC by the workstation run. Fixes are published as `Fix
 |---|---|
 | 0 | done (46 findings) |
 | 1 | done (37 findings) |
-| 2 | running: pass 3a: 677880 uses checked, 33548 resolve to a prefix decl |
+| 2 | running: pass 1: 1509 files, 254653 identifier tails |
 | 3 | pending |
 | 4 | pending |
 | 5 | pending |
@@ -49,6 +49,7 @@ Updated 2026-11-24 18:40 UTC by the workstation run. Fixes are published as `Fix
 
 ## Recent log
 ```
+2026-11-24 18:41 shard-1 batch published #1117-#1121 (Bundle0005, Bundle0181, SemiabelianLieMetricHeight, CommuteCenterRtInfGL, DatCons). #1102-#1105 merged 18:29. Cloud: pr120-cloud.yml on fork main (e71b29856e) + automation branch; it skips until the ANTHROPIC_API_KEY/PR120_PAT secrets exist. Progress page: automation/STATUS.md (tools/status.mjs, refreshed every 10 min by a Monitor, pushes only 
 2026-11-24 18:29 scanner batch 0 done: #1102-#1105 published HIGH, all postchecks passed; LamSing mR_mul no-defensible-fix; MvPoly (new branch lemma), IsArithVar/CMType (_root_ names) false positives -> scanner fixed and synced to the automation branch (f642ae9+). Shard 1: 10 files, 2 claimed by #18 (aliromman), 8 launched as wf_fe4684eb-32c on new trees w24-w31.
 2026-11-24 18:25 scanner batch wf_cb379b0a-6f7: published #1102 Bundle0190, #1103 SliceUmg, #1104 HodgeTateWeilPullback, #1105 PrincipalHermitianFibre (all HIGH; #1102 postcheck passed). False positives: MvPoly.l1Norm (new lemma), IsArithVar + CMType (_root_. declaration names do not open namespaces; scanner fixed). automation branch pushed to the fork (3bfca4e + update).
 2026-11-24 18:09 scanner shard 0/8 (1509 modules): 46 replaced findings in 14 files, 144 added in 29. False positives: chi (untyped {..} binder), del (untyped forall binder), jM (field := assignment); fixed in shadow-scan.mjs for shards 2-7. 8 plausible files (dualMap doubled-namespace x3, CMType, IsArithVar (dotted decl name), UC, mR_mul, MvPoly.l1Norm...) launched as scanner rows in wf_cb379b0a-
@@ -60,5 +61,4 @@ Updated 2026-11-24 18:40 UTC by the workstation run. Fixes are published as `Fix
 2026-11-24 17:36 channels dry: 16:20 look-ahead rows all fixed by Sean Larkin/Robert Penner/Arjun Behl (14:41-16:33); 16:57 Open table 34 rows, 0 free; 17:30 list has an empty look-ahead table. Scanner shard 0/8 (1.2 GB heap) was killed by its guard within a minute (commit 98%). Commit is 30.6/32.6 GB while processes' private memory sums to ~10 GB: ~20 GB is outside processes (machine up since 202
 2026-11-24 17:32 change Updated 2026-11-24 17:30 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
 2026-11-24 17:28 user asked to publish checked fixes: #1088 ZetaIntegralShellsVanishBeyondPeriodRamified (Set.mem_iUnion2 rewrite; safety skeptic passed, diagnosis skeptic still running) and #1089 Bundle1447 (MulEquiv.map_one; safety passed; PR body states the MulOneClass-search risk). Not published: Bundle0484 (skeptic: error already fixed by #1007), Bundle0003 follow-up (no defensible fix; look-
-2026-11-24 17:13 memory alarm 97%: other Claude desktop sessions started 17:05/17:12 (not ours). Stopped batch wf_6f874f26-90c (only Bundle0484 skeptics left; one already rejected it as stale, fixed by #1007). Bundle0484 fix stays unpublished in wt/w1.
 ```
