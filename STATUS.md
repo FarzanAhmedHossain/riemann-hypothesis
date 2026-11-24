@@ -1,20 +1,21 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-24 18:51 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-24 19:01 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
 ## Summary
-19 merged, 5 open, 5 closed (of the last 29).
+24 merged, 0 open, 5 closed (of the last 29).
 
 ## Open PRs
-- [#1121](https://github.com/rohanarun/riemann-hypothesis/pull/1121) Fix Development.AutomorphicArithmetic.Foundations.Convolution.BlockHeckeSlices.DatCons, opened 2026-11-24 18:39
-- [#1120](https://github.com/rohanarun/riemann-hypothesis/pull/1120) Fix Development.AutomorphicArithmetic.Foundations.Convolution.BlockHeckeSlices.CommuteCenterRtInfGL, opened 2026-11-24 18:37
-- [#1119](https://github.com/rohanarun/riemann-hypothesis/pull/1119) Fix Development.AutomorphicSpectrum.Proofs.GeometryProofs.SemiabelianLieMetricHeight, opened 2026-11-24 18:36
-- [#1118](https://github.com/rohanarun/riemann-hypothesis/pull/1118) Fix Development.AutomorphicSpectrum.Proofs.GeometryProofs.Bundle0181, opened 2026-11-24 18:36
-- [#1117](https://github.com/rohanarun/riemann-hypothesis/pull/1117) Fix Development.AutomorphicArithmetic.Foundations.Convolution.BlockHeckeSlices.CuspidalNormBounds.Bundle0005, opened 2026-11-24 18:36
+_none_
 
 ## Merged (most recent first)
+- [#1121](https://github.com/rohanarun/riemann-hypothesis/pull/1121) Fix Development.AutomorphicArithmetic.Foundations.Convolution.BlockHeckeSlices.DatCons, merged 2026-11-24 18:59
+- [#1120](https://github.com/rohanarun/riemann-hypothesis/pull/1120) Fix Development.AutomorphicArithmetic.Foundations.Convolution.BlockHeckeSlices.CommuteCenterRtInfGL, merged 2026-11-24 18:58
+- [#1119](https://github.com/rohanarun/riemann-hypothesis/pull/1119) Fix Development.AutomorphicSpectrum.Proofs.GeometryProofs.SemiabelianLieMetricHeight, merged 2026-11-24 18:58
+- [#1118](https://github.com/rohanarun/riemann-hypothesis/pull/1118) Fix Development.AutomorphicSpectrum.Proofs.GeometryProofs.Bundle0181, merged 2026-11-24 18:58
+- [#1117](https://github.com/rohanarun/riemann-hypothesis/pull/1117) Fix Development.AutomorphicArithmetic.Foundations.Convolution.BlockHeckeSlices.CuspidalNormBounds.Bundle0005, merged 2026-11-24 18:58
 - [#1105](https://github.com/rohanarun/riemann-hypothesis/pull/1105) Fix Development.AutomorphicSpectrum.Proofs.GeometryProofs.PrincipalHermitianFibre, merged 2026-11-24 18:29
 - [#1104](https://github.com/rohanarun/riemann-hypothesis/pull/1104) Fix Development.AutomorphicSpectrum.Proofs.GeometryProofs.HodgeTateWeilPullback, merged 2026-11-24 18:29
 - [#1103](https://github.com/rohanarun/riemann-hypothesis/pull/1103) Fix Development.AutomorphicArithmetic.Foundations.Convolution.BlockHeckeSlices.CuspidalNormBounds.SliceUmg, merged 2026-11-24 18:29
@@ -49,6 +50,7 @@ Updated 2026-11-24 18:51 UTC by the workstation run. Fixes are published as `Fix
 
 ## Recent log
 ```
+2026-11-24 18:52 shard-1 batch done: #1117-#1121 published HIGH, 5/5 postchecks valid. No-fix (capture real but lemma equivalent): Bundle0795, Bundle0016 thetaInt_smul, Bundle0004 genPt_comp. Cloud workflow now also accepts CLAUDE_CODE_OAUTH_TOKEN (user's Console login fails with a browser-verification error); claude CLI is on PATH for setup-token.
 2026-11-24 18:41 shard-1 batch published #1117-#1121 (Bundle0005, Bundle0181, SemiabelianLieMetricHeight, CommuteCenterRtInfGL, DatCons). #1102-#1105 merged 18:29. Cloud: pr120-cloud.yml on fork main (e71b29856e) + automation branch; it skips until the ANTHROPIC_API_KEY/PR120_PAT secrets exist. Progress page: automation/STATUS.md (tools/status.mjs, refreshed every 10 min by a Monitor, pushes only 
 2026-11-24 18:29 scanner batch 0 done: #1102-#1105 published HIGH, all postchecks passed; LamSing mR_mul no-defensible-fix; MvPoly (new branch lemma), IsArithVar/CMType (_root_ names) false positives -> scanner fixed and synced to the automation branch (f642ae9+). Shard 1: 10 files, 2 claimed by #18 (aliromman), 8 launched as wf_fe4684eb-32c on new trees w24-w31.
 2026-11-24 18:25 scanner batch wf_cb379b0a-6f7: published #1102 Bundle0190, #1103 SliceUmg, #1104 HodgeTateWeilPullback, #1105 PrincipalHermitianFibre (all HIGH; #1102 postcheck passed). False positives: MvPoly.l1Norm (new lemma), IsArithVar + CMType (_root_. declaration names do not open namespaces; scanner fixed). automation branch pushed to the fork (3bfca4e + update).
@@ -60,5 +62,4 @@ Updated 2026-11-24 18:51 UTC by the workstation run. Fixes are published as `Fix
 2026-11-24 17:37 user is freeing memory (may reboot). tools/scan-shards.sh (8 shards, 1.6 GB heap, starts each shard below 85% commit, guard kills the scanner at 97%, skips shards already written) armed via Monitor. After a reboot: rerun 'bash tools/scan-shards.sh 8 1600 85 97', then verify runs/shadow-findings-blocked*.json (replaced = high value; added = overload risk) and publish family PRs via
 2026-11-24 17:36 channels dry: 16:20 look-ahead rows all fixed by Sean Larkin/Robert Penner/Arjun Behl (14:41-16:33); 16:57 Open table 34 rows, 0 free; 17:30 list has an empty look-ahead table. Scanner shard 0/8 (1.2 GB heap) was killed by its guard within a minute (commit 98%). Commit is 30.6/32.6 GB while processes' private memory sums to ~10 GB: ~20 GB is outside processes (machine up since 202
 2026-11-24 17:32 change Updated 2026-11-24 17:30 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
-2026-11-24 17:28 user asked to publish checked fixes: #1088 ZetaIntegralShellsVanishBeyondPeriodRamified (Set.mem_iUnion2 rewrite; safety skeptic passed, diagnosis skeptic still running) and #1089 Bundle1447 (MulEquiv.map_one; safety passed; PR body states the MulOneClass-search risk). Not published: Bundle0484 (skeptic: error already fixed by #1007), Bundle0003 follow-up (no defensible fix; look-
 ```
