@@ -1,6 +1,6 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-24 23:34 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-24 23:45 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
@@ -60,6 +60,7 @@ _none_
 
 ## Recent log
 ```
+2026-11-24 23:45 session restarted; 23:30 list (72 Open, build 41,892): prep saw 0 free because touchedByFix counted any fix-style last commit (broad sweeps touch every file) -> fixed in rh.mjs + automation branch. 9 Open rows (no recent fix, line not edited, unprocessed, unclaimed) launched as wf_d42d5fbe-dd2 (w47-w55). #1273 merged 23:33.
 2026-11-24 23:33 change Updated 2026-11-24 23:30 UTC|look-ahead 26994b4f4d95: no free rows (open 0 + look-ahead 0: none)
 2026-11-24 23:32 Lean 4.36 ResolveName.resolveUsingNamespace returns the LONGEST enclosing-namespace prefix with a match (no concatenation): scanner 'added-overload' findings are harmless; only 'replaced' findings can break.
 2026-11-24 23:30 local batch wf_46ed04e6-74d (9 cloud-scan files): #1273 Bundle0334 published HIGH (isTotallyComplex_of_algebra -> _root_.NumberField.*, postcheck valid); 8 no-defensible-fix (equivalent copies or false positives: gsp_map, Bundle0800 isTotallyComplex (harmless; same shape as merged #1263), inv, cj_mul, intS_subst, sec, tn_map/flg_map, valExt). Scanner leftovers are now mostly harml
@@ -71,5 +72,4 @@ _none_
 2026-11-24 21:33 change Updated 2026-11-24 20:54 UTC|look-ahead f89240304505: no free rows (open 0 + look-ahead 0: none)
 2026-11-24 21:32 UC sweep: #1140 #1141 #1143 MERGED; CentreSplitting FP. dualMap 16-module commit (wt/w33) DROPPED: rmsnorm landed the same family fix (baaefa3bce, 17 modules) at 19:36 while our review was paused by a rate limit. Cloud scan run 45468331657: 8 shards in ~27 min (288 replaced findings in 95 files), but its Claude launched fixers in the background and ended -> nothing published; CLOU
 2026-11-24 19:29 family sweep: dualMap alias capture in 25 more blocked files (8 claimed by #18, 1 use skipped where the original saw the alias on main) -> one 16-module commit 30e710db37 in wt/w33 (45 lines), adversarial review running before publish. UC family: 4 more files -> fast-fix wf_27ab1e83-bed (w34-w37). FiniteNotIsUnitOneAddSmul row: already fixed (#598, eb4581be2c). Local scanner stopp
-2026-11-24 19:14 cloud run #3 (45467419759): SUCCESS end to end, API key OK (HTTP 200), Claude 5 turns, USD 0.14, no PR (2 Open rows Bundle0059/Bundle0367; likely stale/no defensible fix). Added a Report step printing Claude's closing summary.
 ```
