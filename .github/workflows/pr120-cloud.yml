@@ -94,6 +94,14 @@ jobs:
           echo "files=$n" >> "$GITHUB_OUTPUT"
           echo "### pr120-cloud scan: replaced findings in $n file(s)" >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Upload scan findings (download with `gh run download <run-id> -n scan-findings`)
+        if: steps.scan.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: scan-findings
+          path: runs/shadow-findings-blocked*.json
+          retention-days: 7
+
       - name: Check the Anthropic API key (one tiny request; prints only the error type/message)
         id: keycheck
         if: steps.gate.outputs.ok == 'true' && ((env.MODE == 'scan' && steps.scan.outputs.files != '0') || (env.MODE == 'fix' && steps.prep.outputs.rows != '0'))
