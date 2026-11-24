@@ -103,6 +103,7 @@ jobs:
           else echo "use=none" >> "$GITHUB_OUTPUT"; echo "### pr120-cloud skipped Claude: the Anthropic API rejected the key (HTTP $code): $msg" >> "$GITHUB_STEP_SUMMARY"; fi
 
       - name: Claude Code
+        id: claude
         if: steps.gate.outputs.ok == 'true' && (env.MODE == 'scan' || steps.prep.outputs.rows != '0') && steps.keycheck.outputs.use != 'none'
         uses: anthropics/claude-code-action@v1
         with:
@@ -116,3 +117,14 @@ jobs:
           claude_args: >-
             --max-turns 400
             --allowedTools "Bash,Read,Edit,Write,Grep,Glob,Agent,TodoWrite"
+
+      - name: Report (Claude's closing summary)
+        if: always() && steps.claude.outcome != 'skipped' && steps.claude.outcome != ''
+        env:
+          EXEC_FILE: ${{ steps.claude.outputs.execution_file }}
+        run: |
+          if [ -n "$EXEC_FILE" ] && [ -f "$EXEC_FILE" ]; then
+            node -e "const j=JSON.parse(require('fs').readFileSync(process.env.EXEC_FILE,'utf8'));const r=(Array.isArray(j)?j:[j]).filter(m=>m&&m.type==='result').pop();console.log(r&&r.result?r.result:'(no closing text)');if(r)console.log('turns: '+r.num_turns+', cost USD: '+(r.total_cost_usd||0).toFixed(2))" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "no Claude execution file"
+          fi
