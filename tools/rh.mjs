@@ -278,7 +278,9 @@ const cmds = {
         } catch { lineEdits = []; }
       }
       r.lineEditedBy = lineEdits;
-      r.touchedByFix = /^(Fix|Merge PR|Coordinator cycle|Restore|Qualify)/i.test(r.lastChange.subject) || lineEdits.length > 0 || r.recentFix;
+      // Not the last commit's subject: by 2026-11-24 multi-module sweeps ("Fix ... bundling leaks (150 modules)")
+      // had touched nearly every file, so a fix-style subject marked all 70 Open rows of the 23:30 list as touched.
+      r.touchedByFix = lineEdits.length > 0 || r.recentFix;
     });
     if (args.includes('--json')) return console.log(JSON.stringify({ head, rows: list }, null, 1));
     console.log(`PR120-BUGS.md: branch head ${head[0]}, updated ${head[1]} — ${rows.length} open, ${rows.filter((r) => !r.claimedBy.length).length} unclaimed`);
