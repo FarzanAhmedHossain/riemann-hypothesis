@@ -37,7 +37,7 @@ Start one `pr120-fixer` subagent per row, all in parallel with the Agent tool. G
 - **no-defensible-fix:** publish nothing, and report what was found.
 
 ## MODE=scan: static name-capture scan of blocked modules
-1. Run `bash tools/scan-shards.sh 8 6000 101 101`. That is 8 shards with 6 GB of heap each and no memory gate; the runner has 16 GB. Then load `runs/shadow-findings-blocked.json`, the "replaced" findings. Skip `runs/shadow-findings-blocked-added.json` unless asked: it only flags possible overloads.
+1. The workflow has already run the scanner on the current tip (`bash tools/scan-shards.sh 8 6000 101 101`, a step before yours). Do not run it again: your commands time out long before 8 shards finish. Load `runs/shadow-findings-blocked.json`, the "replaced" findings. Skip `runs/shadow-findings-blocked-added.json` unless asked: it only flags possible overloads.
 2. Group findings by file. Drop the known false-positive patterns:
    - bound variables, including untyped `{a b}` binders and names bound by `∀`, `∃` or `fun`;
    - structure-field assignments (`field args := …`);
