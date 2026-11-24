@@ -28,7 +28,7 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 340
     env:
       MODE: ${{ github.event.inputs.mode || 'fix' }}
       GH_TOKEN: ${{ secrets.PR120_PAT }}
@@ -84,9 +84,19 @@ jobs:
           echo "rows=$n" >> "$GITHUB_OUTPUT"
           echo "### pr120-cloud: $n free row(s)" >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Scan blocked modules (scan mode; 8 shards, ~1-2 h)
+        id: scan
+        if: steps.gate.outputs.ok == 'true' && env.MODE == 'scan'
+        run: |
+          rm -f runs/shadow-findings-blocked*.json runs/scan-blocked-*of8.log   # fresh scan of the current tip
+          bash tools/scan-shards.sh 8 6000 101 101
+          n=$(node -e "try{const f=require('./runs/shadow-findings-blocked.json');console.log(new Set(f.map(x=>x.file)).size)}catch{console.log(0)}")
+          echo "files=$n" >> "$GITHUB_OUTPUT"
+          echo "### pr120-cloud scan: replaced findings in $n file(s)" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Check the Anthropic API key (one tiny request; prints only the error type/message)
         id: keycheck
-        if: steps.gate.outputs.ok == 'true' && (env.MODE == 'scan' || steps.prep.outputs.rows != '0')
+        if: steps.gate.outputs.ok == 'true' && ((env.MODE == 'scan' && steps.scan.outputs.files != '0') || (env.MODE == 'fix' && steps.prep.outputs.rows != '0'))
         env:
           KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           HAS_OAUTH: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
@@ -104,7 +114,7 @@ jobs:
 
       - name: Claude Code
         id: claude
-        if: steps.gate.outputs.ok == 'true' && (env.MODE == 'scan' || steps.prep.outputs.rows != '0') && steps.keycheck.outputs.use != 'none'
+        if: steps.gate.outputs.ok == 'true' && ((env.MODE == 'scan' && steps.scan.outputs.files != '0') || (env.MODE == 'fix' && steps.prep.outputs.rows != '0')) && steps.keycheck.outputs.use != 'none'
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ steps.keycheck.outputs.use == 'api' && secrets.ANTHROPIC_API_KEY || '' }}
