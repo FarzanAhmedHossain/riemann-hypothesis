@@ -1,6 +1,7 @@
 # Runs the PR #120 fixer toolkit on GitHub's runners and opens "Fix <Module>" PRs from this fork.
 # Setup (once, by the fork owner): see README.md on the `automation` branch.
-#   secrets: ANTHROPIC_API_KEY, PR120_PAT (classic PAT, scope public_repo)
+#   secrets: PR120_PAT (classic PAT, scope public_repo) and either ANTHROPIC_API_KEY (Console API key) or
+#   CLAUDE_CODE_OAUTH_TOKEN (Claude subscription; create it with `claude setup-token`)
 #   Actions must be enabled for the fork; `schedule` only fires from the DEFAULT branch, so either make
 #   `automation` the fork's default branch or copy this file to the default branch (it always checks out
 #   `automation` for the tools).
@@ -38,12 +39,12 @@ jobs:
       - name: Check secrets (skip quietly until they are added)
         id: gate
         env:
-          HAS_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+          HAS_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' || secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
           HAS_PAT: ${{ secrets.PR120_PAT != '' }}
         run: |
           if [ "$HAS_KEY" != "true" ] || [ "$HAS_PAT" != "true" ]; then
             echo "ok=false" >> "$GITHUB_OUTPUT"
-            echo "### pr120-cloud skipped: add the ANTHROPIC_API_KEY and PR120_PAT secrets (see README on the automation branch)" >> "$GITHUB_STEP_SUMMARY"
+            echo "### pr120-cloud skipped: add PR120_PAT plus ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN (see README on the automation branch)" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "ok=true" >> "$GITHUB_OUTPUT"
           fi
@@ -88,6 +89,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.PR120_PAT }}
           prompt: |
             MODE=${{ env.MODE }}. Read CLAUDE.md and CLOUD.md in the repository root and carry out one

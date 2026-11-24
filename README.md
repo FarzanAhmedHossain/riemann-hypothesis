@@ -20,7 +20,7 @@ It is an orphan branch: it shares no history with the Lean project, so nothing h
 ## Enabling the cloud workflow (fork owner, once)
 1. **Enable Actions.** On the fork, open the Actions tab and enable workflows. Forks start with them disabled.
 2. **Add the secrets.** Under Settings → Secrets and variables → Actions → New repository secret, add:
-   - `ANTHROPIC_API_KEY`: an Anthropic API key. Claude Code usage bills to it.
+   - Either `ANTHROPIC_API_KEY` (an Anthropic Console API key; usage bills to it), or `CLAUDE_CODE_OAUTH_TOKEN`. The OAuth token uses your Claude subscription instead: run `claude setup-token` once in a terminal and paste the printed token.
    - `PR120_PAT`: a classic personal access token with the `public_repo` scope. It is needed to push fix branches to this fork and to open PRs on `rohanarun/riemann-hypothesis`. The built-in `GITHUB_TOKEN` cannot open PRs on another repository.
 3. **Make it schedulable.** GitHub runs `schedule` triggers only from the default branch. Pick one:
    - set `automation` as the fork's default branch (Settings → General → Default branch), or
