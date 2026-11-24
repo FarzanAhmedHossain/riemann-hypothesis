@@ -66,7 +66,9 @@ function walk(text, onLine) {
       inStruct = null; dns = null;
       if (name && !/^\d/.test(name) && name !== 'where' && name !== ':') {
         const full = name.startsWith('_root_.') ? name.slice(7) : (ns ? ns + '.' + name : name);
-        if (name.replace(/^_root_\./, '').includes('.')) dns = full.split('.').slice(0, -1).join('.');
+        // `def A.B.x` opens A.B for its own signature and body; `def _root_.A.B.x` does NOT (verified by two
+        // fixers on 2026-11-24: IsArithVar in Bundle0255 and CMType in Bundle0198 were false positives).
+        if (!name.startsWith('_root_.') && name.includes('.')) dns = full.split('.').slice(0, -1).join('.');
         declName = name.replace(/^_root_\./, '');
         decls.push({ full, priv: /private/.test(mods), prot: /protected/.test(mods), kind });
         if (/structure|class|inductive/.test(kind)) { inStruct = full; structIndent = raw.search(/\S/); }
