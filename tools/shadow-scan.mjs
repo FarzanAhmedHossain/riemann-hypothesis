@@ -201,11 +201,15 @@ say(`[${el()}] pass 3a: ${checked} uses checked, ${pending.length} resolve to a 
 
 // Pass 2b: main declarations, only for the names pass 3a needs: full -> modules defining it on main.
 const byFullM = new Map(); let nM = 0;
+// Names (as written) that exist on main under ANY namespace. A finding whose name exists nowhere on main is a
+// lemma newly added on the branch, not a capture (2026-11-24: Mert's MvPoly.l1Norm_sq_le_choose_mul_fockNormSq).
+const pendTok = new Set(pending.map(u => u.tok)); const onMain = new Set();
 const needMods = new Set(); for (const o of new Set(pending.map(u => u.o))) for (const m of visM(o) || []) needMods.add(m);
 await catStream(MAIN, [...needMods].map(m => 'src/' + m.split('.').join('/') + '.lean'), (p, text) => {
   if (text == null) return;
   const mod = pathToMod(p);
   walk(stripComments(text), (line, raw, ns, decls) => {
+    for (const d of decls) for (const t of tails(d.full)) if (pendTok.has(t)) onMain.add(t);
     for (const d of decls) if (needMain.has(d.full)) {
       (byFullM.get(d.full) || byFullM.set(d.full, []).get(d.full)).push({ m: mod, p: d.priv, r: d.prot });
       nM++;
@@ -230,6 +234,7 @@ for (const u of pending) {
   const mFull = mAll.length ? u.prefixes[mAll[0]] + '.' + u.tok : null;
   const rec = { file: 'src/' + u.mod.split('.').join('/') + '.lean', line: u.line, col: u.col, tok: u.tok, ns: u.ns, orig: u.o,
     branch: u.bFull, branchFrom: u.bFrom, mainPrefix: mFull, text: u.text };
+  if (!mFull && !onMain.has(u.tok)) continue; // new on the branch: nothing on main for it to have meant
   if (!u.own && mFull !== u.bFull) { findings.push(rec); continue; }
   const extra = u.bAll.filter(k => !mAll.includes(k)).map(k => u.prefixes[k] + '.' + u.tok);
   if (mFull && extra.length) added.push({ ...rec, extra, mainAll: mAll.map(k => u.prefixes[k] + '.' + u.tok) });
