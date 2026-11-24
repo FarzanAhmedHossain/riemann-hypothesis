@@ -84,6 +84,24 @@ jobs:
           echo "rows=$n" >> "$GITHUB_OUTPUT"
           echo "### pr120-cloud: $n free row(s)" >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Check the Anthropic API key (one tiny request; prints only the error type/message)
+        id: keycheck
+        if: steps.gate.outputs.ok == 'true' && (env.MODE == 'scan' || steps.prep.outputs.rows != '0')
+        env:
+          KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then echo "no ANTHROPIC_API_KEY; the action will use CLAUDE_CODE_OAUTH_TOKEN"; exit 0; fi
+          code=$(curl -s -o keycheck.json -w '%{http_code}' https://api.anthropic.com/v1/messages \
+            -H "x-api-key: $KEY" -H "anthropic-version: 2023-06-01" -H "content-type: application/json" \
+            -d '{"model":"claude-haiku-5-5","max_tokens":1,"messages":[{"role":"user","content":"ping"}]}')
+          msg=$(node -e "try{const r=require('./keycheck.json');console.log(r.error?r.error.type+': '+r.error.message:'ok')}catch{console.log('unreadable response')}")
+          rm -f keycheck.json
+          echo "Anthropic API: HTTP $code - $msg"
+          if [ "$code" != "200" ]; then
+            echo "### pr120-cloud: the Anthropic API rejected the key (HTTP $code): $msg" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
       - name: Claude Code
         if: steps.gate.outputs.ok == 'true' && (env.MODE == 'scan' || steps.prep.outputs.rows != '0')
         uses: anthropics/claude-code-action@v1
