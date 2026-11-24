@@ -1,16 +1,17 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-24 23:04 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-24 23:34 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
 ## Summary
-33 merged, 0 open, 5 closed (of the last 38).
+34 merged, 0 open, 5 closed (of the last 39).
 
 ## Open PRs
 _none_
 
 ## Merged (most recent first)
+- [#1273](https://github.com/rohanarun/riemann-hypothesis/pull/1273) Fix Development.AbelianVarietyTheory.Proofs.SatakeParameters.Bundle0334, merged 2026-11-24 23:33
 - [#1267](https://github.com/rohanarun/riemann-hypothesis/pull/1267) Fix Development.AbelianVarietyTheory.Proofs.DegenerationProofs.Bundle0126, merged 2026-11-24 22:28
 - [#1266](https://github.com/rohanarun/riemann-hypothesis/pull/1266) Fix Development.WeilBound.RepresentationTheoryGL.SiegelWeilProof.HolomorphicContinuation.GlobalGaussLaws.LamSing, merged 2026-11-24 22:28
 - [#1265](https://github.com/rohanarun/riemann-hypothesis/pull/1265) Fix Development.AbelianVarietyTheory.Proofs.TwistedOperators.MixedLagrangianOppositeLagrangianChart, merged 2026-11-24 22:28
@@ -59,6 +60,10 @@ _none_
 
 ## Recent log
 ```
+2026-11-24 23:33 change Updated 2026-11-24 23:30 UTC|look-ahead 26994b4f4d95: no free rows (open 0 + look-ahead 0: none)
+2026-11-24 23:32 Lean 4.36 ResolveName.resolveUsingNamespace returns the LONGEST enclosing-namespace prefix with a match (no concatenation): scanner 'added-overload' findings are harmless; only 'replaced' findings can break.
+2026-11-24 23:30 local batch wf_46ed04e6-74d (9 cloud-scan files): #1273 Bundle0334 published HIGH (isTotallyComplex_of_algebra -> _root_.NumberField.*, postcheck valid); 8 no-defensible-fix (equivalent copies or false positives: gsp_map, Bundle0800 isTotallyComplex (harmless; same shape as merged #1263), inv, cj_mul, intS_subst, sec, tn_map/flg_map, valExt). Scanner leftovers are now mostly harml
+2026-11-24 23:19 change Updated 2026-11-24 23:08 UTC|look-ahead 26994b4f4d95: no free rows (open 0 + look-ahead 0: none)
 2026-11-24 22:57 cloud scan findings downloaded (artifact): 92 files; dropped S/G/chi/del/h* binder-type false positives, files the cloud already fixed (#1262-#1267), 7 claimed by #18, 7 changed in the last 3h, 3 known-equivalent -> 9 free files launched locally as wf_46ed04e6-74d (w38-w46).
 2026-11-24 22:54 change Updated 2026-11-24 22:45 UTC|look-ahead 7e6ac1176582: no free rows (open 0 + look-ahead 0: none)
 2026-11-24 22:54 cloud scan run 2 (45492104220): 8 shards (675 replaced findings in 92 files); Claude published 6 PRs #1262-#1267, ALL MERGED 22:15-22:16; then the API credit balance ran out (USD 3.62 spent), so the Claude step ended with is_error. Scheduled runs now skip Claude until credits are added (key check).
@@ -67,8 +72,4 @@ _none_
 2026-11-24 21:32 UC sweep: #1140 #1141 #1143 MERGED; CentreSplitting FP. dualMap 16-module commit (wt/w33) DROPPED: rmsnorm landed the same family fix (baaefa3bce, 17 modules) at 19:36 while our review was paused by a rate limit. Cloud scan run 45468331657: 8 shards in ~27 min (288 replaced findings in 95 files), but its Claude launched fixers in the background and ended -> nothing published; CLOU
 2026-11-24 19:29 family sweep: dualMap alias capture in 25 more blocked files (8 claimed by #18, 1 use skipped where the original saw the alias on main) -> one 16-module commit 30e710db37 in wt/w33 (45 lines), adversarial review running before publish. UC family: 4 more files -> fast-fix wf_27ab1e83-bed (w34-w37). FiniteNotIsUnitOneAddSmul row: already fixed (#598, eb4581be2c). Local scanner stopp
 2026-11-24 19:14 cloud run #3 (45467419759): SUCCESS end to end, API key OK (HTTP 200), Claude 5 turns, USD 0.14, no PR (2 Open rows Bundle0059/Bundle0367; likely stale/no defensible fix). Added a Report step printing Claude's closing summary.
-2026-11-24 19:09 cloud test runs 45466386679/45466917708: setup OK (gate, checkout, bootstrap, prep found 2 Open rows); Anthropic API rejected the key: 'credit balance is too low'. Workflow now skips Claude cleanly (or falls back to CLAUDE_CODE_OAUTH_TOKEN) when the key is rejected.
-2026-11-24 18:52 shard-1 batch done: #1117-#1121 published HIGH, 5/5 postchecks valid. No-fix (capture real but lemma equivalent): Bundle0795, Bundle0016 thetaInt_smul, Bundle0004 genPt_comp. Cloud workflow now also accepts CLAUDE_CODE_OAUTH_TOKEN (user's Console login fails with a browser-verification error); claude CLI is on PATH for setup-token.
-2026-11-24 18:41 shard-1 batch published #1117-#1121 (Bundle0005, Bundle0181, SemiabelianLieMetricHeight, CommuteCenterRtInfGL, DatCons). #1102-#1105 merged 18:29. Cloud: pr120-cloud.yml on fork main (e71b29856e) + automation branch; it skips until the ANTHROPIC_API_KEY/PR120_PAT secrets exist. Progress page: automation/STATUS.md (tools/status.mjs, refreshed every 10 min by a Monitor, pushes only 
-2026-11-24 18:29 scanner batch 0 done: #1102-#1105 published HIGH, all postchecks passed; LamSing mR_mul no-defensible-fix; MvPoly (new branch lemma), IsArithVar/CMType (_root_ names) false positives -> scanner fixed and synced to the automation branch (f642ae9+). Shard 1: 10 files, 2 claimed by #18 (aliromman), 8 launched as wf_fe4684eb-32c on new trees w24-w31.
 ```
