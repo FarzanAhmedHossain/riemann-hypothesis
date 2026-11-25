@@ -2,7 +2,7 @@
 // Write a progress page (Markdown) for the PR #120 fixing work and, with --push, commit it to the fork's
 // `automation` branch so it can be watched in a browser:
 //   node tools/status.mjs [--push] [--repo owner/name]     (default repo: the `fork` remote's owner/name)
-// Content: our PRs (state, merge time), scanner shard progress, the last log lines, links. It holds no local
+// Content: our PRs (state, merge time), cloud attack runs, the last log lines, links. It holds no local
 // paths or personal data (the log lines are filtered for paths before publishing).
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -23,15 +23,21 @@ const prs = JSON.parse(sh('gh', ['pr', 'list', '-R', UPSTREAM, '--author', OWNER
 const merged = prs.filter(p => p.state === 'MERGED'), open = prs.filter(p => p.state === 'OPEN'), closed = prs.filter(p => p.state === 'CLOSED');
 const t = s => (s || '').replace('T', ' ').slice(0, 16);
 
-const shards = [];
-for (let i = 0; i < 8; i++) {
-  const out = path.join(HOME, 'runs', `shadow-findings-blocked-${i}of8.json`);
-  const log = path.join(HOME, 'runs', `scan-blocked-${i}of8.log`);
-  let st = 'pending';
-  if (fs.existsSync(out)) { try { const n = JSON.parse(fs.readFileSync(out, 'utf8')).length; st = `done (${n} findings)`; } catch { st = 'done'; } }
-  else if (fs.existsSync(log)) { const last = fs.readFileSync(log, 'utf8').trim().split('\n').filter(l => l.startsWith('[')).pop() || ''; st = `running: ${last.replace(/^\[\d+s\]\s*/, '').slice(0, 60)}`; }
-  shards.push(`| ${i} | ${st} |`);
-}
+// Cloud attack runs (pr120-attack.yml): each job's state; build jobs are named after their module.
+const attack = [];
+try {
+  const runs = JSON.parse(sh('gh', ['run', 'list', '-R', REPO, '-w', 'pr120-attack.yml', '-L', '5', '--json', 'databaseId,status,conclusion,createdAt,url']));
+  for (const r of runs) {
+    let jobs = [];
+    try { jobs = JSON.parse(sh('gh', ['run', 'view', String(r.databaseId), '-R', REPO, '--json', 'jobs'])).jobs || []; } catch {}
+    const js = jobs.map(j => {
+      const m = j.name.match(/^([\w-]+) \(([^,)]+)/);
+      const name = m ? `${m[1]} ${m[2].split('.').pop()}` : j.name;
+      return `${name}: ${j.status === 'completed' ? j.conclusion : j.status.replace('_', ' ')}`;
+    });
+    attack.push(`- [run ${r.databaseId}](${r.url}), started ${t(r.createdAt)} UTC, ${r.status === 'completed' ? r.conclusion : r.status.replace('_', ' ')}${js.length ? `: ${js.join('; ')}` : ''}`);
+  }
+} catch { attack.push('_could not list the runs_'); }
 
 const clean = l => !/[A-Za-z]:[\\/]|\/c\/Users|AppData|@gmail|monir/i.test(l);
 const logLines = fs.existsSync(path.join(HOME, 'runs', 'cycles.log'))
@@ -43,7 +49,7 @@ const md = [
   ``,
   `Updated ${t(new Date().toISOString())} UTC by the workstation run. Fixes are published as \`Fix <Module>\` PRs from [${REPO}](https://github.com/${REPO}) to [${UPSTREAM}](https://github.com/${UPSTREAM}/tree/opt/collapse-and-consolidate-4.36).`,
   ``,
-  `**Links:** [all our PRs](https://github.com/${UPSTREAM}/pulls?q=is%3Apr+author%3A${OWNER}) · [cloud workflow runs](https://github.com/${REPO}/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)`,
+  `**Links:** [all our PRs](https://github.com/${UPSTREAM}/pulls?q=is%3Apr+author%3A${OWNER}) · [cloud workflow runs](https://github.com/${REPO}/actions/workflows/pr120-cloud.yml) · [attack runs](https://github.com/${REPO}/actions/workflows/pr120-attack.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)`,
   ``,
   `## Summary`,
   `${merged.length} merged, ${open.length} open, ${closed.length} closed (of the last ${prs.length}).`,
@@ -54,8 +60,8 @@ const md = [
   `## Merged (most recent first)`,
   merged.map(p => `- [#${p.number}](${p.url}) ${p.title}, merged ${t(p.mergedAt)}`).join('\n') || '_none_',
   ``,
-  `## Name-capture scanner (blocked modules, 8 shards)`,
-  `| shard | status |`, `|---|---|`, ...shards,
+  `## Cloud attack runs (build at the tip, fix, rebuild, publish)`,
+  attack.length ? attack.join('\n') : '_none yet_',
   ``,
   `## Recent log`,
   '```', ...logLines.map(l => l.slice(0, 400)), '```',
