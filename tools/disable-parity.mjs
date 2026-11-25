@@ -19,10 +19,15 @@ import { HOME, REPO, BASE, MAIN, pathToMod, modToPath, say } from './scanlib.mjs
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
 const JSON_OUT = opt('--json', '');
+// --kind: which attribute lines to compare. disable = [-instance] (default), local = [local instance], instance = [instance], simp = [-simp]
+const KINDS = { disable: '-instance', local: 'local instance', instance: 'instance', simp: '-simp' };
+const KIND = KINDS[opt('--kind', 'disable')]; if (!KIND) throw new Error('--kind must be one of ' + Object.keys(KINDS).join(', '));
+const KIND_RE = KIND.replace(/ /g, ' *');                                   // for git grep (basic regex; `-` is literal)
+const KIND_JS = new RegExp('attribute\\s*\\[' + KIND.replace(/-/g, '\\-').replace(/ /g, '\\s*') + '\\]\\s*(.*)$');
 const REV = opt('--rev', BASE); // tip revision to check (recall test: --rev 94ff1f0fd0 must report ReBaseZeta)
 const g = (...a) => execFileSync('git', ['-C', REPO, '-c', 'core.quotepath=false', ...a], { encoding: 'utf8', maxBuffer: 1 << 30 });
 const attrNames = line => {
-  const m = line.match(/attribute\s*\[-instance\]\s*(.*)$/); if (!m) return [];
+  const m = line.match(KIND_JS); if (!m) return [];
   return m[1].replace(/--.*$/, '').replace(/\s+in\s*$/, '').trim().split(/\s+/).filter(Boolean);
 };
 const last = n => n.split('.').pop();
@@ -37,7 +42,7 @@ const grepLines = (rev, args) => {
 };
 
 // 1. main: module -> [{line, names, text}]
-const mainHits = grepLines(MAIN, ['-e', 'attribute *\\[-instance\\]']);
+const mainHits = grepLines(MAIN, ['-e', 'attribute *\\[' + KIND_RE + '\\]']);
 const mainBy = new Map();
 for (const h of mainHits) {
   const names = attrNames(h.text); if (!names.length) continue;
@@ -48,7 +53,7 @@ for (const h of mainHits) {
 say(`main: ${mainHits.length} instance-disable lines in ${mainBy.size} modules`);
 
 // 2. tip: per file, markers and disable lines in order
-const tipHits = grepLines(REV, ['-e', '^-- bundled from ', '-e', 'attribute *\\[-instance\\]']);
+const tipHits = grepLines(REV, ['-e', '^-- bundled from ', '-e', 'attribute *\\[' + KIND_RE + '\\]']);
 const tipFiles = new Map();
 for (const h of tipHits) { if (!tipFiles.has(h.file)) tipFiles.set(h.file, []); tipFiles.get(h.file).push(h); }
 const where = new Map(); // orig module -> {file, line, names:Set}
