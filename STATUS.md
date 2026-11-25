@@ -1,6 +1,6 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-25 02:08 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-25 02:38 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
@@ -60,6 +60,7 @@ _none_
 
 ## Recent log
 ```
+2026-11-25 02:33 change Updated 2026-11-25 02:29 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 01:59 change Updated 2026-11-25 01:55 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 01:25 change Updated 2026-11-25 01:21 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 01:00 change Updated 2026-11-25 00:53 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
@@ -71,5 +72,4 @@ _none_
 2026-11-24 23:56 change Updated 2026-11-24 23:53 UTC|look-ahead 9af3acf01c55: no free rows (open 1 + look-ahead 0: ValuationBoundedFrame.lean)
 2026-11-24 23:45 session restarted; 23:30 list (72 Open, build 41,892): prep saw 0 free because touchedByFix counted any fix-style last commit (broad sweeps touch every file) -> fixed in rh.mjs + automation branch. 9 Open rows (no recent fix, line not edited, unprocessed, unclaimed) launched as wf_d42d5fbe-dd2 (w47-w55). #1273 merged 23:33.
 2026-11-24 23:33 change Updated 2026-11-24 23:30 UTC|look-ahead 26994b4f4d95: no free rows (open 0 + look-ahead 0: none)
-2026-11-24 23:32 Lean 4.36 ResolveName.resolveUsingNamespace returns the LONGEST enclosing-namespace prefix with a match (no concatenation): scanner 'added-overload' findings are harmless; only 'replaced' findings can break.
 ```
