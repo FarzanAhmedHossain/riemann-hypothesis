@@ -23,6 +23,19 @@ const { head, rows } = JSON.parse(node('tools/rh.mjs', 'rows', '--json'));
 const proc = new Set(fs.readFileSync(path.join(HOME, 'runs', 'processed.txt'), 'utf8').split('\n').filter(Boolean));
 let cand = rows.filter(r => !(r.claimedBy || []).some(c => /#\d+/.test(c)) && !r.touchedByFix && !proc.has(r.file + '|*'));
 say(`list ${head?.[1]} head ${head?.[0]}: ${rows.length} rows, ${cand.length} untouched/unprocessed/unclaimed-by-title`);
+// Drop rows whose file changed after the row was FIRST listed: the shard build does not re-run every cycle, so the
+// list re-carries old errors (2026-11-24 23:30: all 9 such rows were already fixed; 72/72 had commits after first
+// report). first-seen.mjs reads the list history; if it fails, keep the candidates.
+if (cand.length) {
+  try {
+    const fsn = JSON.parse(node('tools/first-seen.mjs', '--hours', '40', '--json'));
+    const fsr = Array.isArray(fsn) ? fsn : (fsn.rows || []);
+    const changed = new Set(fsr.filter(r => r.changedSinceFirstSeen).map(r => `${r.file}:${r.line}`));
+    const before = cand.length;
+    cand = cand.filter(r => !changed.has(`${r.file}:${r.line}`) && !changed.has(`${r.file.replace(/^src\//, '')}:${r.line}`));
+    say(`first-seen: ${before - cand.length} row(s) dropped (file changed after the row was first listed)`);
+  } catch (e) { say('first-seen check failed, keeping candidates: ' + String(e.message || e).split('\n')[0]); }
+}
 if (cand.length) {
   let out = '';
   try { out = node('tools/claim.mjs', 'check', ...cand.map(r => r.file)); } catch (e) { out = String(e.stdout || ''); }
