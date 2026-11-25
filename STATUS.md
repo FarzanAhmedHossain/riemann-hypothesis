@@ -1,6 +1,6 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-25 06:21 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-25 06:31 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
@@ -60,6 +60,7 @@ _none_
 
 ## Recent log
 ```
+2026-11-25 06:30 change Updated 2026-11-25 06:24 UTC|look-ahead 131589d322ca: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 06:17 change Updated 2026-11-25 06:11 UTC|look-ahead 131589d322ca: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 06:14 06:01 row Bundle0020:144 already fixed (8e218d98ea / #1303 at 01:51; row first listed 05:20 from an older shard head). prep.mjs now drops rows with a 'Fix <Module>' commit or a commit quoting the error (synced to automation).
 2026-11-25 05:54 change Updated 2026-11-25 05:48 UTC|look-ahead 131589d322ca: no free rows (open 0 + look-ahead 0: none)
@@ -71,5 +72,4 @@ _none_
 2026-11-25 04:08 change Updated 2026-11-25 03:39 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 03:42 change Updated 2026-11-25 03:39 UTC|look-ahead e16ea8607631: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 03:18 change Updated 2026-11-25 03:04 UTC|look-ahead e16ea8607631: no free rows (open 0 + look-ahead 0: none)
-2026-11-25 03:08 change Updated 2026-11-25 03:04 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
 ```
