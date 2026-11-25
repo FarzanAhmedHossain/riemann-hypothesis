@@ -1,6 +1,6 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-25 09:54 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-25 10:04 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
@@ -60,6 +60,8 @@ _none_
 
 ## Recent log
 ```
+2026-11-25 10:02 change Updated 2026-11-25 09:52 UTC|look-ahead 2ef4fd33288f: no free rows (open 0 + look-ahead 0: none)
+2026-11-25 09:57 change Updated 2026-11-25 09:52 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 09:48 change Updated 2026-11-25 09:42 UTC|look-ahead 2ef4fd33288f: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 09:47 cloud scan 4 (45584215544, tip fc339a91f6): 111 replaced findings in 31 files (scan 3: 134 in 50; scanner FP fixes removed ?main/letI/case tags). scan-triage: 77 binder-name tokens (all seen in scan 3), 17 judged, 6 files claimed by #18 -> 0 candidates. Name-capture class is exhausted at this tip.
 2026-11-25 09:38 parity clean at fc339a91f6
@@ -70,6 +72,4 @@ _none_
 2026-11-25 09:18 change Updated 2026-11-25 09:13 UTC|look-ahead 5cbe63a7926c: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 09:08 change Updated 2026-11-25 09:04 UTC|look-ahead 99065fc46c02: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 09:02 parity clean at 374b1a37d2
-2026-11-25 09:01 change Updated 2026-11-25 08:53 UTC|look-ahead 99065fc46c02: no free rows (open 0 + look-ahead 0: none)
-2026-11-25 08:58 disable-parity --kind {disable,instance,local,simp}: all clean at tip; watcher restarted as bo28512xw (tools/watch-list.sh) with parity on every tip change
 ```
