@@ -1,6 +1,6 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-25 01:07 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-25 01:27 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
@@ -60,6 +60,7 @@ _none_
 
 ## Recent log
 ```
+2026-11-25 01:25 change Updated 2026-11-25 01:21 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 01:00 change Updated 2026-11-25 00:53 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 00:41 change Updated 2026-11-25 00:37 UTC|look-ahead 19d9765bd106: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 00:24 change Updated 2026-11-25 00:16 UTC|look-ahead 98f894cb36c8: no free rows (open 0 + look-ahead 0: none)
@@ -71,5 +72,4 @@ _none_
 2026-11-24 23:33 change Updated 2026-11-24 23:30 UTC|look-ahead 26994b4f4d95: no free rows (open 0 + look-ahead 0: none)
 2026-11-24 23:32 Lean 4.36 ResolveName.resolveUsingNamespace returns the LONGEST enclosing-namespace prefix with a match (no concatenation): scanner 'added-overload' findings are harmless; only 'replaced' findings can break.
 2026-11-24 23:30 local batch wf_46ed04e6-74d (9 cloud-scan files): #1273 Bundle0334 published HIGH (isTotallyComplex_of_algebra -> _root_.NumberField.*, postcheck valid); 8 no-defensible-fix (equivalent copies or false positives: gsp_map, Bundle0800 isTotallyComplex (harmless; same shape as merged #1263), inv, cj_mul, intS_subst, sec, tn_map/flg_map, valExt). Scanner leftovers are now mostly harml
-2026-11-24 23:19 change Updated 2026-11-24 23:08 UTC|look-ahead 26994b4f4d95: no free rows (open 0 + look-ahead 0: none)
 ```
