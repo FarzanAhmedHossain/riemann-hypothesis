@@ -1,6 +1,6 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-25 07:43 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-25 07:53 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
@@ -60,6 +60,8 @@ _none_
 
 ## Recent log
 ```
+2026-11-25 07:50 list 07:44: fresh look-ahead row ReBaseZeta.lean:40 (round 3, tip session 94ff1f0fd0 started 07:37; rmsnorm 8851789ca7 re-enabled DoubleCosetMeasures.instMeasGL/instBorelGL in that section at 03:11) -> wbm6db6mk / wf_8ee7aeca-215 (w61). Watcher restarted as bt6h8e7c7 (now also saved as tools/watch-list.sh)
+2026-11-25 07:47 cloud scan 3 (45566538355, 31 min, tip 94ff1f0fd0): 134 replaced findings in 50 files. Dropped chi/G/del/S/J/h* binder FPs, ?main hole, letI alg, files examined before (5 no-fix, 3 equivalent copies re-checked: capturing modules unchanged), 7 claimed by #18 -> 3 free files launched as wdft8a17c / wf_e5c94f9a-f63 (w58 Bundle0049, w59 Bundle1293, w60 CompactIntegralFields/Bundle0007
 2026-11-25 07:40 change Updated 2026-11-25 07:32 UTC|look-ahead ee0bca8f40d1: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 07:36 change Updated 2026-11-25 07:32 UTC|look-ahead 6517e509c3c7: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 07:25 change Updated 2026-11-25 07:21 UTC|look-ahead ee0bca8f40d1: no free rows (open 0 + look-ahead 0: none)
@@ -70,6 +72,4 @@ _none_
 2026-11-25 07:02 change Updated 2026-11-25 06:46 UTC|look-ahead ee0bca8f40d1: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 06:50 change Updated 2026-11-25 06:35 UTC|look-ahead ee0bca8f40d1: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 06:30 change Updated 2026-11-25 06:24 UTC|look-ahead 131589d322ca: no free rows (open 0 + look-ahead 0: none)
-2026-11-25 06:17 change Updated 2026-11-25 06:11 UTC|look-ahead 131589d322ca: no free rows (open 0 + look-ahead 0: none)
-2026-11-25 06:14 06:01 row Bundle0020:144 already fixed (8e218d98ea / #1303 at 01:51; row first listed 05:20 from an older shard head). prep.mjs now drops rows with a 'Fix <Module>' commit or a commit quoting the error (synced to automation).
 ```
