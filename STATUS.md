@@ -1,6 +1,6 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-25 00:05 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-25 00:25 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
@@ -60,6 +60,7 @@ _none_
 
 ## Recent log
 ```
+2026-11-25 00:24 change Updated 2026-11-25 00:16 UTC|look-ahead 98f894cb36c8: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 00:05 prep.mjs now drops Open rows whose file changed after the row was first listed (first-seen.mjs); synced to automation (543c4f2). User went to bed; continuing overnight: watcher + status page re-armed on expiry, fixers on fresh rows only.
 2026-11-25 00:00 23:30 Open batch wf_d42d5fbe-dd2: all 9 already-fixed (the Open table re-listed ~30 day-old rows at 19:13; first-seen check: 72/72 Open rows have commits after first report). Unpublished-branch audit: w1 Bundle0484 (stale, fixed by #1007), w3 ProperGroupGermFiniteSubscheme (superseded by mr.Shu 17a8086265), w33 dualMap (superseded by rmsnorm baaefa3bce) -> nothing to publish.
 2026-11-25 00:00 change Updated 2026-11-24 23:53 UTC|look-ahead a4baad471b35: no free rows (open 0 + look-ahead 0: none)
@@ -71,5 +72,4 @@ _none_
 2026-11-24 23:19 change Updated 2026-11-24 23:08 UTC|look-ahead 26994b4f4d95: no free rows (open 0 + look-ahead 0: none)
 2026-11-24 22:57 cloud scan findings downloaded (artifact): 92 files; dropped S/G/chi/del/h* binder-type false positives, files the cloud already fixed (#1262-#1267), 7 claimed by #18, 7 changed in the last 3h, 3 known-equivalent -> 9 free files launched locally as wf_46ed04e6-74d (w38-w46).
 2026-11-24 22:54 change Updated 2026-11-24 22:45 UTC|look-ahead 7e6ac1176582: no free rows (open 0 + look-ahead 0: none)
-2026-11-24 22:54 cloud scan run 2 (45492104220): 8 shards (675 replaced findings in 92 files); Claude published 6 PRs #1262-#1267, ALL MERGED 22:15-22:16; then the API credit balance ran out (USD 3.62 spent), so the Claude step ended with is_error. Scheduled runs now skip Claude until credits are added (key check).
 ```
