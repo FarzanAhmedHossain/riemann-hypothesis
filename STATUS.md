@@ -1,6 +1,6 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-25 04:19 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-25 04:49 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
@@ -60,6 +60,7 @@ _none_
 
 ## Recent log
 ```
+2026-11-25 04:49 change Updated 2026-11-25 04:45 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 04:15 change Updated 2026-11-25 04:12 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 04:08 change Updated 2026-11-25 03:39 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 03:42 change Updated 2026-11-25 03:39 UTC|look-ahead e16ea8607631: no free rows (open 0 + look-ahead 0: none)
@@ -71,5 +72,4 @@ _none_
 2026-11-25 01:00 change Updated 2026-11-25 00:53 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 00:41 change Updated 2026-11-25 00:37 UTC|look-ahead 19d9765bd106: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 00:24 change Updated 2026-11-25 00:16 UTC|look-ahead 98f894cb36c8: no free rows (open 0 + look-ahead 0: none)
-2026-11-25 00:05 prep.mjs now drops Open rows whose file changed after the row was first listed (first-seen.mjs); synced to automation (543c4f2). User went to bed; continuing overnight: watcher + status page re-armed on expiry, fixers on fresh rows only.
 ```
