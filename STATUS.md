@@ -1,6 +1,6 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-25 08:03 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-25 08:13 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
@@ -60,6 +60,8 @@ _none_
 
 ## Recent log
 ```
+2026-11-25 08:09 change Updated 2026-11-25 08:04 UTC|look-ahead 919e3413bada: no free rows (open 0 + look-ahead 0: none)
+2026-11-25 08:04 change Updated 2026-11-25 07:54 UTC|look-ahead 919e3413bada: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 07:59 change Updated 2026-11-25 07:54 UTC|look-ahead 6517e509c3c7: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 07:55 scan-3 batch wf_e5c94f9a-f63: all 3 no-defensible-fix. Bundle0049 (mem_cl_row/imHom/aaLb_inW: captures real but equivalent copies; #700 qualified only mem_cl_im), Bundle1293 (gm_res_pullU equivalent copy; same explicit order), CompactIntegralFields/Bundle0007 (nil = induction case tag, false positive)
 2026-11-25 07:50 list 07:44: fresh look-ahead row ReBaseZeta.lean:40 (round 3, tip session 94ff1f0fd0 started 07:37; rmsnorm 8851789ca7 re-enabled DoubleCosetMeasures.instMeasGL/instBorelGL in that section at 03:11) -> wbm6db6mk / wf_8ee7aeca-215 (w61). Watcher restarted as bt6h8e7c7 (now also saved as tools/watch-list.sh)
@@ -70,6 +72,4 @@ _none_
 2026-11-25 07:18 change Updated 2026-11-25 07:09 UTC|look-ahead ee0bca8f40d1: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 07:14 list 06:58/07:10: 46 open rows, 0 free (all have later fix commits or were processed); compiled 43,930 unchanged since before 06:11. Dispatched cloud scan run 45566538355 on tip 94ff1f0fd0 (scanner steps only need PR120_PAT; Claude step will skip without credits)
 2026-11-25 07:11 change Updated 2026-11-25 06:58 UTC|look-ahead ee0bca8f40d1: no free rows (open 0 + look-ahead 0: none)
-2026-11-25 07:07 wpo7kiz99 Bundle0354:99 (look-ahead 94ff1f0fd0 r2): already-fixed at tip by 22f1682e9f (ExistsIsHaar matrix-instance exclusion restored); row came from old heads 9422ea4335/057825ae87; nothing published
-2026-11-25 07:02 change Updated 2026-11-25 06:46 UTC|look-ahead ee0bca8f40d1: no free rows (open 0 + look-ahead 0: none)
 ```
