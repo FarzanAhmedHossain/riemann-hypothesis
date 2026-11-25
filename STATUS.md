@@ -1,8 +1,8 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-25 15:03 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-25 15:19 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
-**Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
+**Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [attack runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-attack.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
 ## Summary
 34 merged, 0 open, 5 closed (of the last 39).
@@ -46,20 +46,13 @@ _none_
 - [#291](https://github.com/rohanarun/riemann-hypothesis/pull/291) Fix Development.AbelianVarietyTheory.Proofs.DivisorProofs.Bundle0769, merged 2026-11-23 20:53
 - [#271](https://github.com/rohanarun/riemann-hypothesis/pull/271) Fix Development.AbelianVarietyTheory.Proofs.FlagMeasures.Bundle0282, merged 2026-11-23 20:11
 
-## Name-capture scanner (blocked modules, 8 shards)
-| shard | status |
-|---|---|
-| 0 | done (46 findings) |
-| 1 | done (37 findings) |
-| 2 | running: [21712:0000027EC0F92000]  1081564 ms: Mark-Compact 1583.3 (1 |
-| 3 | pending |
-| 4 | pending |
-| 5 | pending |
-| 6 | pending |
-| 7 | pending |
+## Cloud attack runs (build at the tip, fix, rebuild, publish)
+- [run 45631551714](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/runs/45631551714), started 2026-11-25 14:12 UTC, in progress: select: success; build-before IsMultiHomogMonoX: in progress; build-before ChartDensityIntegrable: in progress
+- [run 45627008871](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/runs/45627008871), started 2026-11-25 13:46 UTC, cancelled: select: success; build-before ChartDensityIntegrable: cancelled; build-before IsMultiHomogMonoX: cancelled; record: cancelled; fix: cancelled; build-after: cancelled; publish: cancelled
 
 ## Recent log
 ```
+2026-11-25 15:17 DEPLOYED automation a1a3622 + main pr120-cloud.yml: prune job keeps newest 2 pr120-state caches per mode (cache was 10.2 GB full, 16 x 640 MB; pruned to 4). attack-select skips modules OK at an earlier tip while their closure is unchanged. Test run 45643406330 OK (prune deleted 1). Cancelled upstream 'checks' run 45643305140 triggered by the main update.
 2026-11-25 14:59 tip eac8fa4db4 -> cloud check run dispatched
 2026-11-25 14:58 list Updated 2026-11-25 14:57 UTC|look-ahead d41d8cd98f00 -> cloud fix run dispatched
 2026-11-25 14:44 list Updated 2026-11-25 14:44 UTC|look-ahead d41d8cd98f00 -> cloud fix run dispatched
@@ -71,5 +64,4 @@ _none_
 2026-11-25 14:07 list Updated 2026-11-25 14:06 UTC|look-ahead d41d8cd98f00 -> cloud fix run dispatched
 2026-11-25 13:57 tip 7fb6893d70 -> cloud check run dispatched
 2026-11-25 13:55 list Updated 2026-11-25 13:53 UTC|look-ahead d41d8cd98f00 -> cloud fix run dispatched
-2026-11-25 13:46 DEPLOYED automation 48ca6ed + main (all 3 workflows): lake sandbox (user lb, no sudo, env -i), hardened attack, flat artifacts. Sandbox smoke test run 45625854316 OK (HomExtendsOverDVR, 275 modules, 2 min deps). First attack run dispatched on ChartDensityIntegrable + IsMultiHomogMonoX.
 ```
