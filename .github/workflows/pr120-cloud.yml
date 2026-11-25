@@ -315,3 +315,26 @@ jobs:
         run: |
           node tools/publish-ready.mjs --from-dir incoming 2>&1 | tee publish.log
           grep -E '^(PUBLISHED|SKIPPED|RETRY|FAILED)' publish.log | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY" || true
+
+  # Job 3: keep the repository's Actions cache (10 GB) from filling with state snapshots. Every run saves one
+  # (~650 MB); left alone they evict the attack pipeline's build caches within hours. Keeps the newest two per
+  # mode. No AI, no checkout: it reads only cache ids and keys from the API.
+  prune:
+    needs: run
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Delete older state caches
+        run: |
+          gh api "repos/$REPO/actions/caches?per_page=100&sort=created_at&direction=desc" \
+            --jq '.actions_caches[] | select(.key | test("^pr120-state-[a-z]+-[0-9]+-[0-9]+$")) | "\(.id) \(.key)"' |
+          awk '{ split($2, a, "-"); if (++seen[a[3]] > 2) print $1, $2 }' |
+          while read -r id key; do
+            gh api -X DELETE "repos/$REPO/actions/caches/$id" > /dev/null && echo "deleted $key"
+          done

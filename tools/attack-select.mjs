@@ -7,11 +7,11 @@
 //
 // Each entry: {module, file, line, error, closure}. Smallest closures first (cheapest to build; closures overlap,
 // so a shared build cache makes later ones cheaper). runs/attack-ok.txt lists "<module> <tip>" pairs already
-// built OK; those are skipped until the tip changes the module's closure (simple rule: skip while the same tip).
+// built OK; a module is skipped while no file of its import closure (and no build setting) changed since that tip.
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { HOME, BASE, importGraph, failingFromList, pathToMod, modToPath, say, git } from './scanlib.mjs';
+import { HOME, REPO, BASE, importGraph, failingFromList, pathToMod, modToPath, say, git } from './scanlib.mjs';
 
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
@@ -20,7 +20,8 @@ const given = opt('--modules', '').split(',').map(s => s.trim()).filter(Boolean)
 const tip = git('rev-parse', BASE).trim();
 const g = importGraph(BASE);
 // Full import closure (what `lake build` compiles), counted in project modules.
-const closure = root => { const seen = new Set([root]); const st = [root]; while (st.length) { const m = st.pop(); for (const i of (g[m]?.imports || [])) if (g[i.mod] && !seen.has(i.mod)) { seen.add(i.mod); st.push(i.mod); } } return seen.size; };
+const closureSet = root => { const seen = new Set([root]); const st = [root]; while (st.length) { const m = st.pop(); for (const i of (g[m]?.imports || [])) if (g[i.mod] && !seen.has(i.mod)) { seen.add(i.mod); st.push(i.mod); } } return seen; };
+const closure = root => closureSet(root).size;
 
 let rows;
 if (given.length) {
@@ -41,9 +42,38 @@ if (given.length) {
   }
 }
 const okFile = path.join(HOME, 'runs', 'attack-ok.txt');
-const ok = new Set(fs.existsSync(okFile) ? fs.readFileSync(okFile, 'utf8').split('\n').filter(Boolean) : []);
+// module -> the tips it built OK at
+const okAt = new Map();
+for (const l of (fs.existsSync(okFile) ? fs.readFileSync(okFile, 'utf8') : '').split('\n')) {
+  const [m, t] = l.trim().split(/\s+/);
+  if (m && /^[0-9a-f]{40}$/.test(t || '')) okAt.set(m, [...(okAt.get(m) || []), t]);
+}
+// Files changed between an OK tip and this tip; null when that tip is not in this clone or a build setting changed.
+const changedSince = new Map();
+const changed = t => {
+  if (!changedSince.has(t)) {
+    let v = null;
+    try {
+      execFileSync('git', ['-C', REPO, 'cat-file', '-e', `${t}^{commit}`], { stdio: 'ignore' });
+      const files = git('diff', '--name-only', '--no-renames', t, tip).split('\n').filter(Boolean);
+      v = files.some(p => /^(lakefile|lake-manifest\.json|lean-toolchain)/.test(p)) ? null : new Set(files);
+    } catch { v = null; }
+    changedSince.set(t, v);
+  }
+  return changedSince.get(t);
+};
+const stillOk = m => (okAt.get(m) || []).some(t => {
+  if (t === tip) return true;
+  const ch = changed(t);
+  if (!ch) return false;
+  for (const x of closureSet(m)) if (ch.has(modToPath(x))) return false;
+  return true;
+});
 let cand = rows.filter(r => g[r.module]).map(r => ({ ...r, closure: closure(r.module) }))
-  .filter(r => given.length || (r.closure <= MAXC && !ok.has(`${r.module} ${tip}`)));
+  .filter(r => given.length || r.closure <= MAXC);
+const skipped = given.length ? [] : cand.filter(r => stillOk(r.module));
+if (skipped.length) say(`skipped ${skipped.length} module(s) built OK at an earlier tip, closure unchanged since: ${skipped.map(r => r.module.split('.').pop()).join(', ')}`);
+cand = cand.filter(r => !skipped.includes(r));
 if (cand.length) {
   let out = '';
   try { out = execFileSync('node', ['tools/claim.mjs', 'check', ...cand.map(r => r.file)], { cwd: HOME, encoding: 'utf8', maxBuffer: 1 << 26 }); }
