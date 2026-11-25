@@ -120,7 +120,7 @@ jobs:
           node toolkit/tools/diff-gate.mjs src-tree "out/$id.json"
           node toolkit/tools/hygiene-apply.mjs check-diff src-tree "out/$id.json"
           echo "id=$id" >> "$GITHUB_OUTPUT"
-      - name: Restore a project build of this tip (never saved back: this tree has the change)
+      - name: Restore a project build of this tip (never saved back, since this tree has the change)
         uses: actions/cache/restore@v4
         with:
           path: src-tree/.lake/build
