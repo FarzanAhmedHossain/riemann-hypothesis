@@ -181,19 +181,21 @@ function publishRecord(runKey, rec, dir) {
 function handleRun(runKey, dir) {
   const all = walk(dir);
   showReport(runKey, all);
-  const recs = all.filter(f => f.endsWith('.json')).map(f => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return null; } });
+  // Records are the .json files that carry an id; each one's bundle sits next to it, whatever folder level the
+  // artifact gave them (upload-artifact roots multi-path uploads at their common parent).
+  const recs = all.filter(f => f.endsWith('.json')).map(f => { try { return { rec: JSON.parse(fs.readFileSync(f, 'utf8')), at: path.dirname(f) }; } catch { return { rec: null, at: dir }; } });
   const r = state.runs[runKey] || (state.runs[runKey] = {});
   r.reported = true;
   const valid = [];
-  for (const rec of recs) {
+  for (const { rec, at } of recs) {
     const bad = invalid(rec, runKey);
     const key = `${runKey}|${rec && typeof rec.id === 'string' ? clean(rec.id, 80) : '?'}`;
     if (bad) { if (!state.records[key]) { state.records[key] = { final: true, result: `SKIPPED invalid record: ${bad}` }; say(`SKIPPED invalid record in run ${runKey}: ${bad}`); } continue; }
     if (!state.records[key]) state.records[key] = { attempts: 0, final: false };
-    valid.push(rec);
+    valid.push({ rec, at });
   }
   save();
-  for (const rec of valid) publishRecord(runKey, rec, dir);
+  for (const { rec, at } of valid) publishRecord(runKey, rec, at);
   r.done = Object.entries(state.records).filter(([k]) => k.startsWith(runKey + '|')).every(([, v]) => v.final);
   save();
 }

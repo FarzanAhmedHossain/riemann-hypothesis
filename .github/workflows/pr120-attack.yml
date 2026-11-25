@@ -2,10 +2,11 @@
 #   select        (no AI, read token)   pick Open rows with small import closures that no open PR touches
 #   build-before  (no secrets, matrix)  `lake build <Module>` at the tip; capture Lean's FULL error messages
 #   fix           (AI, read-only)       one fixer per failing module; verified commits become git bundles
-#   build-after   (no secrets, matrix)  `lake build <Module>` with the fix applied (shared build cache: minutes)
-#   publish       (PR120_PAT, no AI)    only fixes whose build passed; the PR says so
+#   build-after   (no secrets, matrix)  `lake build` of the target (and every module the fix touches) with the fix
+#   publish       (PR120_PAT, no AI)    only fixes whose build passed, checked against provenance; the PR says so
 #   record        (no AI)               remember modules that built OK at this tip
-# Builds run upstream code, so build jobs never see a secret. Claude never sees a write token.
+# Every `lake` command runs as an unprivileged user with an empty environment (tools/lake-sandbox.sh): upstream
+# code cannot reach a token, the runner's memory, the cache service, or the files that carry verdicts.
 name: pr120-attack
 
 on:
@@ -15,7 +16,7 @@ on:
         description: "comma-separated Lean modules to attack (empty = pick the smallest open rows automatically)"
         default: ""
       k:
-        description: "how many rows to pick automatically"
+        description: "how many rows to pick automatically (1-4)"
         default: "2"
       maxc:
         description: "largest import closure (project modules) to attempt"
@@ -54,34 +55,38 @@ jobs:
         with: { ref: automation, persist-credentials: false }
       - uses: actions/setup-node@v4
         with: { node-version: "22" }
-      - name: Restore the clone and attack state
+      - name: Restore the clone (from the cloud runs)
         uses: actions/cache/restore@v4
         with:
           path: |
             riemann-hypothesis
             runs
-          key: pr120-attack-state-${{ github.run_id }}
-          restore-keys: |
-            pr120-attack-state-
-            pr120-state-
+          key: pr120-state-attack-${{ github.run_id }}
+          restore-keys: pr120-state-
+      - name: Restore the attack memory (modules already OK at a tip)
+        uses: actions/cache/restore@v4
+        with:
+          path: runs/attack-ok.txt
+          key: pr120-attack-ok-${{ github.run_id }}
+          restore-keys: pr120-attack-ok-
       - name: Bootstrap and pick targets
         id: pick
         run: |
           rm -rf runs/ready runs/cloud-report.md
           bash tools/bootstrap.sh
-          node -e "const k=+process.env.IN_K||2,c=+process.env.IN_MAXC||6000;if(!(k>=1&&k<=6&&c>=100&&c<=30000)){console.error('bad k/maxc');process.exit(1)}"
+          node -e "const k=Number(process.env.IN_K||2),c=Number(process.env.IN_MAXC||6000);if(!(Number.isInteger(k)&&k>=1&&k<=4&&Number.isInteger(c)&&c>=100&&c<=30000)){console.error('bad k or maxc');process.exit(1)}"
           args=(--k "${IN_K:-2}" --maxc "${IN_MAXC:-6000}")
           [ -n "$IN_MODULES" ] && args+=(--modules "$IN_MODULES")
           node tools/attack-select.mjs "${args[@]}" > targets.json 2> select.log || { cat select.log; exit 1; }
           cat select.log
-          echo "targets=$(node -e "process.stdout.write(JSON.stringify(require('./targets.json').map((t,i)=>({...t,idx:i}))))")" >> "$GITHUB_OUTPUT"
+          echo "targets=$(node -e "const c=require('crypto');process.stdout.write(JSON.stringify(require('./targets.json').map((t,i)=>({module:t.module,file:t.file,closure:t.closure,idx:i,key:c.createHash('sha1').update(t.module).digest('hex').slice(0,16)}))))")" >> "$GITHUB_OUTPUT"
           echo "n=$(node -e "console.log(require('./targets.json').length)")" >> "$GITHUB_OUTPUT"
           echo "tip=$(git -C riemann-hypothesis rev-parse origin/$BRANCH)" >> "$GITHUB_OUTPUT"
-          { echo "### pr120-attack targets"; cat select.log | sed 's/^/    /'; } >> "$GITHUB_STEP_SUMMARY"
+          { echo "### pr120-attack targets"; sed 's/^/    /' select.log; } >> "$GITHUB_STEP_SUMMARY"
 
   build-before:
     needs: select
-    if: needs.select.outputs.n != '0'
+    if: ${{ !cancelled() && needs.select.result == 'success' && needs.select.outputs.n != '0' }}
     runs-on: ubuntu-latest
     timeout-minutes: 355
     strategy:
@@ -90,62 +95,58 @@ jobs:
         t: ${{ fromJSON(needs.select.outputs.targets) }}
     env:
       MOD: ${{ matrix.t.module }}
-      TIP: ${{ needs.select.outputs.tip }}
     steps:
       - name: Free disk space
         run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost || true
+      - name: Check out the toolkit
+        uses: actions/checkout@v4
+        with: { ref: automation, persist-credentials: false, path: toolkit }
       - name: Check out the branch at the selected tip
         uses: actions/checkout@v4
         with: { repository: "${{ env.UPSTREAM }}", ref: "${{ needs.select.outputs.tip }}", fetch-depth: 1, persist-credentials: false, path: src-tree }
-      - name: Install elan, dependencies and the Mathlib cache
-        working-directory: src-tree
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
-          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-          export PATH="$HOME/.elan/bin:$PATH"
-          timeout 40m lake env true
-          (cd .lake/packages/mathlib && timeout 40m lake exe cache get)
-      - name: Restore the shared project build
+      - name: Restore the project build (this module's, else any at this tip, else any)
         uses: actions/cache/restore@v4
         with:
           path: src-tree/.lake/build
-          key: pr120-lake-${{ needs.select.outputs.tip }}-${{ matrix.t.idx }}
+          key: pr120-lake-${{ needs.select.outputs.tip }}-${{ matrix.t.key }}
           restore-keys: |
             pr120-lake-${{ needs.select.outputs.tip }}-
             pr120-lake-
-      - name: Build the module at the tip
-        id: build
-        working-directory: src-tree
+      - name: Sandbox, dependencies and the Mathlib cache (as the unprivileged user)
         run: |
-          set +e
-          timeout 290m lake build "$MOD" > ../before.log 2>&1; echo "rc=$?" >> "$GITHUB_OUTPUT"
-      - name: Save the shared project build
-        if: always()
+          bash toolkit/tools/lake-sandbox.sh setup src-tree
+          rc=$(bash toolkit/tools/lake-sandbox.sh run src-tree 40 deps.log env true); tail -3 deps.log; [ "$rc" = 0 ]
+          rc=$(bash toolkit/tools/lake-sandbox.sh run src-tree/.lake/packages/mathlib 40 cache.log exe cache get); tail -3 cache.log; [ "$rc" = 0 ]
+      - name: Build the module at the tip (as the unprivileged user)
+        id: build
+        run: |
+          rc=$(bash toolkit/tools/lake-sandbox.sh run src-tree 290 before.log build "$MOD")
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+      - name: Save the project build
+        if: ${{ !cancelled() }}
         uses: actions/cache/save@v4
         with:
           path: src-tree/.lake/build
-          key: pr120-lake-${{ needs.select.outputs.tip }}-${{ matrix.t.idx }}
-      - name: Check out the toolkit (fresh, after the build) and summarise
-        uses: actions/checkout@v4
-        with: { ref: automation, persist-credentials: false, path: toolkit }
+          key: pr120-lake-${{ needs.select.outputs.tip }}-${{ matrix.t.key }}
       - name: Verdict
+        env: { RC: "${{ steps.build.outputs.rc }}" }
         run: |
           mkdir -p out
-          node toolkit/tools/build-errors.mjs before.log "$MOD" "${{ steps.build.outputs.rc }}" > out/before-${{ matrix.t.idx }}.json
+          node toolkit/tools/build-errors.mjs before.log "$MOD" "${RC:-1}" > out/before-${{ matrix.t.idx }}.json
           node -e "const v=require('./out/before-${{ matrix.t.idx }}.json');console.log(v.status+': '+v.module+' ('+v.built+' modules built, '+v.errors.length+' error(s) in the module, '+v.depFailures.length+' failing imports)')" | tee -a "$GITHUB_STEP_SUMMARY"
           tail -c 200000 before.log > out/before-${{ matrix.t.idx }}.log
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: ${{ !cancelled() }}
         with: { name: "before-${{ matrix.t.idx }}", path: out/, retention-days: 7 }
 
   fix:
     needs: [select, build-before]
-    if: always() && needs.select.outputs.n != '0'
+    if: ${{ !cancelled() && needs.select.result == 'success' && needs.select.outputs.n != '0' }}
     runs-on: ubuntu-latest
     timeout-minutes: 240
     environment: pr120
     outputs:
-      records: ${{ steps.count.outputs.records }}
+      records: ${{ steps.records.outputs.records }}
     env:
       GH_TOKEN: ${{ github.token }}
       FORK_REPO: ${{ github.repository }}
@@ -153,33 +154,42 @@ jobs:
       GIT_EMAIL: ${{ github.repository_owner_id }}+${{ github.repository_owner }}@users.noreply.github.com
       PR120_NO_PR: "1"
       MODE: attack
+      TARGETS: ${{ needs.select.outputs.targets }}
     steps:
       - uses: actions/checkout@v4
         with: { ref: automation }
       - uses: actions/setup-node@v4
         with: { node-version: "22" }
-      - name: Restore the clone
+      - name: Restore the clone (from the cloud runs)
         uses: actions/cache/restore@v4
         with:
-          path: riemann-hypothesis
-          key: pr120-attack-clone-${{ github.run_id }}
-          restore-keys: |
-            pr120-attack-state-
-            pr120-state-
+          path: |
+            riemann-hypothesis
+            runs
+          key: pr120-state-attackfix-${{ github.run_id }}
+          restore-keys: pr120-state-
       - name: Bootstrap
         run: |
           rm -rf runs/ready runs/cloud-report.md runs/attack runs/*/PR.md runs/*/error.txt runs/*/commit.txt
           bash tools/bootstrap.sh
-      - name: Collect the build verdicts
-        id: verdicts
+      - name: Download the build verdicts (one folder per target)
         uses: actions/download-artifact@v4
-        with: { pattern: "before-*", path: runs/attack, merge-multiple: true }
-      - name: Which modules failed in their own code
+        with: { pattern: "before-*", path: verdicts }
+      - name: Collect each target's verdict from its own artifact
         id: failed
         run: |
-          n=$(node -e "const fs=require('fs');let n=0;for(const f of fs.readdirSync('runs/attack').filter(f=>f.endsWith('.json'))){const v=JSON.parse(fs.readFileSync('runs/attack/'+f));if(v.status==='failed')n++}console.log(n)" 2>/dev/null || echo 0)
-          echo "n=$n" >> "$GITHUB_OUTPUT"
-          echo "### pr120-attack: $n module(s) fail in their own code at the tip" >> "$GITHUB_STEP_SUMMARY"
+          mkdir -p runs/attack verdicts
+          node -e "
+            const fs=require('fs');const T=JSON.parse(process.env.TARGETS);let n=0;
+            for (const t of T) {
+              const f='verdicts/before-'+t.idx+'/before-'+t.idx+'.json';
+              let v; try { v=JSON.parse(fs.readFileSync(f,'utf8')); } catch { console.log('no verdict for '+t.module); continue; }
+              if (v.module!==t.module) { console.log('verdict module mismatch for '+t.idx); continue; }
+              fs.copyFileSync(f,'runs/attack/before-'+t.idx+'.json');
+              try { fs.copyFileSync('verdicts/before-'+t.idx+'/before-'+t.idx+'.log','runs/attack/before-'+t.idx+'.log'); } catch {}
+              console.log(v.status+': '+v.module); if (v.status==='failed') n++;
+            }
+            fs.appendFileSync(process.env.GITHUB_OUTPUT,'n='+n+'\n');" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Claude Code (attack)
         id: claude
         if: steps.failed.outputs.n != '0'
@@ -198,7 +208,7 @@ jobs:
             --allowedTools "Bash,Read,Edit,Write,Grep,Glob,Agent,TodoWrite"
       - name: Refuse to upload anything that contains a secret
         id: leak
-        if: always()
+        if: ${{ !cancelled() }}
         env:
           T1: ${{ github.token }}
           T2: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -209,25 +219,33 @@ jobs:
             [ -n "$t" ] || continue
             if grep -rqF -- "$t" runs 2>/dev/null; then echo "secret found under runs/; nothing uploaded"; rm -rf runs; mkdir -p runs/ready; exit 1; fi
           done
-      - name: Records for build-after
-        id: count
-        if: always() && steps.leak.outcome == 'success'
+          if [ -f runs/cloud-report.md ]; then cp runs/cloud-report.md runs/ready/cloud-report.md; fi
+      - name: Records for build-after (each tied to the failing target it fixes)
+        id: records
+        if: ${{ !cancelled() && steps.leak.outcome == 'success' }}
         run: |
-          echo "records=$(node -e "const fs=require('fs');const d='runs/ready';const r=fs.existsSync(d)?fs.readdirSync(d).filter(f=>f.endsWith('.json')).map(f=>JSON.parse(fs.readFileSync(d+'/'+f))).filter(x=>x&&typeof x.id==='string'&&Array.isArray(x.files)&&x.files.length).map((x,i)=>({id:x.id,idx:i,module:x.files[0].replace(/^src\//,'').replace(/\.lean$/,'').split('/').join('.')})):[];process.stdout.write(JSON.stringify(r))")" >> "$GITHUB_OUTPUT"
+          node -e "
+            const fs=require('fs');const T=JSON.parse(process.env.TARGETS);const out=[];
+            const mod=f=>f.replace(/^src\//,'').replace(/\.lean$/,'').split('/').join('.');
+            const failed=T.filter(t=>{try{return JSON.parse(fs.readFileSync('runs/attack/before-'+t.idx+'.json','utf8')).status==='failed'}catch{return false}});
+            const d='runs/ready'; const files=fs.existsSync(d)?fs.readdirSync(d).filter(f=>f.endsWith('.json')):[];
+            files.forEach(f=>{
+              let r; try { r=JSON.parse(fs.readFileSync(d+'/'+f,'utf8')); } catch { return; }
+              if (!r||typeof r.id!=='string'||!/^[A-Za-z0-9_-]+-r\d+-\d+$/.test(r.id)||!Array.isArray(r.files)||!/^[0-9a-f]{40}$/.test(r.base||'')) return;
+              const t=failed.find(t=>r.files.includes(t.file));
+              if (!t) { console.log('dropped '+r.id+': it touches no failing target'); return; }
+              const mods=[t.module,...r.files.map(mod).filter(m=>m!==t.module)].filter(m=>/^[\p{L}\p{N}_.']+$/u.test(m));
+              out.push({id:r.id,idx:out.length,target:t.module,key:t.key,modules:mods.join(' '),base:r.base});
+            });
+            console.log(out.length+' record(s) for build-after');
+            fs.appendFileSync(process.env.GITHUB_OUTPUT,'records='+JSON.stringify(out)+'\n');"
       - uses: actions/upload-artifact@v4
-        if: always() && steps.leak.outcome == 'success'
-        with:
-          name: attack-candidates
-          path: |
-            runs/ready/*.json
-            runs/ready/*.bundle
-            runs/cloud-report.md
-          if-no-files-found: ignore
-          retention-days: 7
+        if: ${{ !cancelled() && steps.leak.outcome == 'success' }}
+        with: { name: attack-candidates, path: runs/ready/, if-no-files-found: ignore, retention-days: 7 }
 
   build-after:
     needs: [select, fix]
-    if: always() && needs.fix.outputs.records != '' && needs.fix.outputs.records != '[]'
+    if: ${{ !cancelled() && needs.fix.result == 'success' && needs.fix.outputs.records != '' && needs.fix.outputs.records != '[]' }}
     runs-on: ubuntu-latest
     timeout-minutes: 355
     strategy:
@@ -235,64 +253,65 @@ jobs:
       matrix:
         r: ${{ fromJSON(needs.fix.outputs.records) }}
     env:
-      MOD: ${{ matrix.r.module }}
       RID: ${{ matrix.r.id }}
+      TARGET: ${{ matrix.r.target }}
+      MODS: ${{ matrix.r.modules }}
+      BASE_SHA: ${{ matrix.r.base }}
     steps:
       - name: Free disk space
         run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost || true
-      - name: Validate the record id and module
-        run: node -e "if(!/^[A-Za-z0-9_-]+-r\d+-\d+$/.test(process.env.RID)||!/^[\p{L}\p{N}_.']+$/u.test(process.env.MOD))process.exit(1)"
+      - name: Validate the record
+        run: node -e "const ok=/^[A-Za-z0-9_-]+-r\d+-\d+$/.test(process.env.RID)&&/^[0-9a-f]{40}$/.test(process.env.BASE_SHA)&&process.env.MODS.split(' ').every(m=>/^[\p{L}\p{N}_.']+$/u.test(m))&&process.env.MODS.split(' ')[0]===process.env.TARGET;if(!ok)process.exit(1)"
+      - name: Check out the toolkit
+        uses: actions/checkout@v4
+        with: { ref: automation, persist-credentials: false, path: toolkit }
       - name: Check out the branch
         uses: actions/checkout@v4
-        with: { repository: "${{ env.UPSTREAM }}", ref: "${{ env.BRANCH }}", fetch-depth: 400, persist-credentials: false, path: src-tree }
+        with: { repository: "${{ env.UPSTREAM }}", ref: "${{ env.BRANCH }}", fetch-depth: 1, persist-credentials: false, path: src-tree }
       - uses: actions/download-artifact@v4
         with: { name: attack-candidates, path: incoming }
-      - name: Apply the fix from its bundle
+      - name: Apply the fix from its bundle (as the runner, before the sandbox owns the tree)
         working-directory: src-tree
         run: |
-          head=$(node -e "const r=require('../incoming/'+process.env.RID+'.json');if(!/^[0-9a-f]{40}$/.test(r.head))process.exit(1);process.stdout.write(r.head)")
-          git -c core.hooksPath=/dev/null bundle verify "../incoming/$RID.bundle"
+          head=$(node -e "const r=require('../incoming/'+process.env.RID+'.json');if(!/^[0-9a-f]{40}$/.test(r.head)||r.base!==process.env.BASE_SHA)process.exit(1);process.stdout.write(r.head)")
+          git -c core.hooksPath=/dev/null fetch -q --depth=1 origin "$BASE_SHA"
+          git -c core.hooksPath=/dev/null bundle verify -q "../incoming/$RID.bundle"
           git -c core.hooksPath=/dev/null fetch -q "../incoming/$RID.bundle" "refs/pr120/$RID:refs/pr120-in/$RID"
           test "$(git rev-parse "refs/pr120-in/$RID")" = "$head"
           git -c core.hooksPath=/dev/null checkout -q --detach "$head"
-      - name: Install elan, dependencies and the Mathlib cache
-        working-directory: src-tree
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
-          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-          export PATH="$HOME/.elan/bin:$PATH"
-          timeout 40m lake env true
-          (cd .lake/packages/mathlib && timeout 40m lake exe cache get)
-      - name: Restore the shared project build
+      - name: Restore the target's project build from build-before
         uses: actions/cache/restore@v4
         with:
           path: src-tree/.lake/build
-          key: pr120-lake-${{ needs.select.outputs.tip }}-after-${{ matrix.r.idx }}
+          key: pr120-lake-${{ needs.select.outputs.tip }}-${{ matrix.r.key }}
           restore-keys: |
             pr120-lake-${{ needs.select.outputs.tip }}-
             pr120-lake-
-      - name: Build the module with the fix
-        id: build
-        working-directory: src-tree
+      - name: Sandbox, dependencies and the Mathlib cache (as the unprivileged user)
         run: |
-          set +e
-          timeout 290m lake build "$MOD" > ../after.log 2>&1; echo "rc=$?" >> "$GITHUB_OUTPUT"
-      - name: Check out the toolkit (fresh, after the build)
-        uses: actions/checkout@v4
-        with: { ref: automation, persist-credentials: false, path: toolkit }
+          bash toolkit/tools/lake-sandbox.sh setup src-tree
+          rc=$(bash toolkit/tools/lake-sandbox.sh run src-tree 40 deps.log env true); tail -3 deps.log; [ "$rc" = 0 ]
+          rc=$(bash toolkit/tools/lake-sandbox.sh run src-tree/.lake/packages/mathlib 40 cache.log exe cache get); tail -3 cache.log; [ "$rc" = 0 ]
+      - name: Build the target and every module the fix touches (as the unprivileged user)
+        id: build
+        run: |
+          read -r -a mods <<< "$MODS"
+          rc=$(bash toolkit/tools/lake-sandbox.sh run src-tree 290 after.log build "${mods[@]}")
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
       - name: Verdict
+        env: { RC: "${{ steps.build.outputs.rc }}" }
         run: |
           mkdir -p out
-          node toolkit/tools/build-errors.mjs after.log "$MOD" "${{ steps.build.outputs.rc }}" > v.json
-          node -e "const v=require('./v.json');require('fs').writeFileSync('out/verified-'+process.env.RID+'.json',JSON.stringify({id:process.env.RID,module:v.module,status:v.status,errors:v.errors.slice(0,5),run:process.env.GITHUB_RUN_ID}));console.log(process.env.RID+': '+v.status)" | tee -a "$GITHUB_STEP_SUMMARY"
-          tail -c 100000 after.log > out/after-${{ matrix.r.idx }}.log
+          node toolkit/tools/build-errors.mjs after.log "$TARGET" "${RC:-1}" > v.json
+          node -e "const v=require('./v.json');const fs=require('fs');fs.writeFileSync('out/verified-'+process.env.RID+'.json',JSON.stringify({id:process.env.RID,target:process.env.TARGET,modules:process.env.MODS,status:Number(process.env.RC)===0?'ok':v.status,errors:v.errors.slice(0,5),run:process.env.GITHUB_RUN_ID}));console.log(process.env.RID+': '+(Number(process.env.RC)===0?'ok':v.status))" | tee -a "$GITHUB_STEP_SUMMARY"
+          tail -c 100000 after.log > out/after.log
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: ${{ !cancelled() }}
         with: { name: "after-${{ matrix.r.idx }}", path: out/, retention-days: 7 }
 
   publish:
     needs: [fix, build-after]
-    if: always() && needs.fix.outputs.records != '' && needs.fix.outputs.records != '[]'
+    if: ${{ !cancelled() && needs.fix.result == 'success' && needs.fix.outputs.records != '' && needs.fix.outputs.records != '[]' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment: pr120
@@ -303,7 +322,12 @@ jobs:
       GIT_EMAIL: ${{ github.repository_owner_id }}+${{ github.repository_owner }}@users.noreply.github.com
       PUBLISH_ONLY: "1"
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      RECORDS: ${{ needs.fix.outputs.records }}
     steps:
+      - name: Check the publishing token
+        id: gate
+        env: { HAS_PAT: "${{ secrets.PR120_PAT != '' }}" }
+        run: echo "ok=$HAS_PAT" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
         with: { ref: automation, persist-credentials: false }
       - uses: actions/setup-node@v4
@@ -311,80 +335,74 @@ jobs:
       - uses: actions/download-artifact@v4
         with: { name: attack-candidates, path: candidates }
       - uses: actions/download-artifact@v4
-        with: { pattern: "after-*", path: verdicts, merge-multiple: true }
-      - name: Keep only fixes whose build passed; say so in the PR text
+        with: { pattern: "after-*", path: verdicts }
+      - name: Keep only fixes whose build passed (verdict from its own build-after job, uploaded after the AI job ended)
         id: keep
+        env: { GH_TOKEN: "${{ github.token }}" }
         run: |
-          mkdir -p incoming
+          mkdir -p incoming verdicts
+          gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs?per_page=100" --jq '[.jobs[]|select(.name=="fix")|.completed_at][0]' > fix-done.txt
+          gh api --paginate "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts?per_page=100" --jq '.artifacts[]|[.name,.created_at]|@tsv' > artifacts.tsv
           node -e "
-            const fs=require('fs');let n=0;
-            for (const f of fs.readdirSync('verdicts').filter(f=>/^verified-.*\.json$/.test(f))) {
-              const v=JSON.parse(fs.readFileSync('verdicts/'+f));
-              if (v.status!=='ok' || !/^[A-Za-z0-9_-]+-r\d+-\d+$/.test(v.id)) { console.log('not verified: '+v.id+' ('+v.status+')'); continue; }
-              const rec=JSON.parse(fs.readFileSync('candidates/'+v.id+'.json'));
-              rec.body=String(rec.body).replace(/Not built locally; relying on the coordinator's build\.?/g,'').trimEnd()+'\n\nBuilt: \`lake build '+v.module+'\` succeeded with this change on a GitHub Actions runner ('+process.env.RUN_URL+'). Before the change the same build failed with the error above.\n';
-              fs.writeFileSync('incoming/'+v.id+'.json',JSON.stringify(rec,null,1));
-              fs.copyFileSync('candidates/'+v.id+'.bundle','incoming/'+v.id+'.bundle'); n++;
-              console.log('verified: '+v.id);
+            const fs=require('fs');const R=JSON.parse(process.env.RECORDS);let n=0;
+            const fixDone=Date.parse(fs.readFileSync('fix-done.txt','utf8').trim().replace(/\"/g,''));
+            const made=Object.fromEntries(fs.readFileSync('artifacts.tsv','utf8').split('\n').filter(Boolean).map(l=>l.split('\t')));
+            for (const r of R) {
+              const name='after-'+r.idx;
+              if (!(Date.parse(made[name])>fixDone)) { console.log('not verified: '+r.id+' (artifact '+name+' missing or older than the AI job)'); continue; }
+              let v; try { v=JSON.parse(fs.readFileSync('verdicts/'+name+'/verified-'+r.id+'.json','utf8')); } catch { console.log('not verified: '+r.id+' (no verdict)'); continue; }
+              if (v.id!==r.id||v.target!==r.target||v.modules!==r.modules||v.status!=='ok') { console.log('not verified: '+r.id+' ('+v.status+')'); continue; }
+              const rec=JSON.parse(fs.readFileSync('candidates/'+r.id+'.json','utf8'));
+              rec.body=String(rec.body).replace(/Not built locally; relying on the coordinator's build\.?/g,'').trimEnd()+'\n\nBuilt: \`lake build '+r.modules+'\` succeeded with this change on a GitHub Actions runner ('+process.env.RUN_URL+'). Before the change, \`lake build '+r.target+'\` failed at the tip with the error above.\n';
+              fs.writeFileSync('incoming/'+r.id+'.json',JSON.stringify(rec,null,1));
+              fs.copyFileSync('candidates/'+r.id+'.bundle','incoming/'+r.id+'.bundle'); n++;
+              console.log('verified: '+r.id);
             }
-            console.log(n+' verified fix(es)');" | tee -a "$GITHUB_STEP_SUMMARY"
-          echo "n=$(ls incoming/*.json 2>/dev/null | wc -l | tr -d ' ')" >> "$GITHUB_OUTPUT"
+            console.log(n+' verified fix(es)');fs.appendFileSync(process.env.GITHUB_OUTPUT,'n='+n+'\n');" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Upload the verified records (the workstation's fallback reads these)
         if: steps.keep.outputs.n != '0'
         uses: actions/upload-artifact@v4
         with: { name: ready-branches, path: incoming/, retention-days: 7 }
-      - name: Check the publishing token
-        id: gate
-        if: steps.keep.outputs.n != '0'
-        env: { HAS_PAT: "${{ secrets.PR120_PAT != '' }}" }
-        run: echo "ok=$HAS_PAT" >> "$GITHUB_OUTPUT"
       - name: Fresh partial clone
-        if: steps.gate.outputs.ok == 'true'
+        if: steps.keep.outputs.n != '0' && steps.gate.outputs.ok == 'true'
         run: bash tools/bootstrap.sh
       - name: Publish (rebase, check, push fix/<leaf>, open the PR)
-        if: steps.gate.outputs.ok == 'true'
+        if: steps.keep.outputs.n != '0' && steps.gate.outputs.ok == 'true'
         run: |
           node tools/publish-ready.mjs --from-dir incoming 2>&1 | tee publish.log
           grep -E '^(PUBLISHED|SKIPPED|RETRY|FAILED)' publish.log | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY" || true
 
   record:
     needs: [select, build-before]
-    if: always() && needs.select.outputs.n != '0'
+    if: ${{ !cancelled() && needs.select.result == 'success' && needs.select.outputs.n != '0' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      TARGETS: ${{ needs.select.outputs.targets }}
+      TIP: ${{ needs.select.outputs.tip }}
     steps:
-      - uses: actions/checkout@v4
-        with: { ref: automation, persist-credentials: false }
-      - name: Restore the attack state
+      - name: Restore the attack memory
         uses: actions/cache/restore@v4
         with:
-          path: |
-            riemann-hypothesis
-            runs
-          key: pr120-attack-state-${{ github.run_id }}
-          restore-keys: |
-            pr120-attack-state-
-            pr120-state-
+          path: runs/attack-ok.txt
+          key: pr120-attack-ok-${{ github.run_id }}
+          restore-keys: pr120-attack-ok-
       - uses: actions/download-artifact@v4
-        with: { pattern: "before-*", path: verdicts, merge-multiple: true }
+        with: { pattern: "before-*", path: verdicts }
       - name: Remember modules that built OK at this tip
-        env: { TIP: "${{ needs.select.outputs.tip }}" }
         run: |
-          mkdir -p runs
+          mkdir -p runs verdicts
+          touch runs/attack-ok.txt
           node -e "
-            const fs=require('fs');const out=[];
-            for (const f of fs.readdirSync('verdicts').filter(f=>f.endsWith('.json'))) {
-              const v=JSON.parse(fs.readFileSync('verdicts/'+f));
-              if (v.status==='ok' && /^[\p{L}\p{N}_.']+$/u.test(v.module)) out.push(v.module+' '+process.env.TIP);
-              console.log(v.status+': '+v.module);
+            const fs=require('fs');const T=JSON.parse(process.env.TARGETS);const out=[];
+            for (const t of T) {
+              let v; try { v=JSON.parse(fs.readFileSync('verdicts/before-'+t.idx+'/before-'+t.idx+'.json','utf8')); } catch { continue; }
+              if (v.module===t.module && v.status==='ok') out.push(t.module+' '+process.env.TIP);
+              console.log(v.status+': '+t.module);
             }
             fs.appendFileSync('runs/attack-ok.txt', out.map(x=>x+'\n').join(''));" | tee -a "$GITHUB_STEP_SUMMARY"
-      - name: Make sure both cached paths exist
-        run: mkdir -p riemann-hypothesis runs
-      - name: Save the attack state
+      - name: Save the attack memory
         uses: actions/cache/save@v4
         with:
-          path: |
-            riemann-hypothesis
-            runs
-          key: pr120-attack-state-${{ github.run_id }}
+          path: runs/attack-ok.txt
+          key: pr120-attack-ok-${{ github.run_id }}
