@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-// Picks Open rows of PR120-BUGS.md for the attack pipeline (pr120-attack.yml).
+// Picks Open and look-ahead rows of PR120-BUGS.md for the attack pipeline (pr120-attack.yml).
 // Those are rows whose module's project import closure is small enough to build on a runner, that no open PR
 // touches, and that were not found OK at this tip already.
 //
-//   node tools/attack-select.mjs [--k 2] [--maxc 6000] [--modules A.B,C.D]   prints a JSON array on stdout
+//   node tools/attack-select.mjs [--k 2] [--maxc 6000] [--modules A.B,C.D] [--md saved-list.md]   prints a JSON array on stdout
 //
 // Each entry: {module, file, line, error, closure}. Smallest closures first (cheapest to build; closures overlap,
 // so a shared build cache makes later ones cheaper). runs/attack-ok.txt lists "<module> <tip>" pairs already
@@ -30,7 +30,9 @@ if (given.length) {
     return { module: m, file: modToPath(m), line: 0, error: '(requested by hand)' };
   });
 } else {
-  const { md } = failingFromList();
+  // --md <file>: a saved PR120-BUGS.md instead of the live one (for tests)
+  const mdFile = opt('--md', '');
+  const { md } = mdFile ? { md: fs.readFileSync(mdFile, 'utf8') } : failingFromList();
   const open = md.split(/^## /m).find(s => /^Open\b/.test(s)) || '';
   rows = [];
   for (const l of open.split('\n')) {
@@ -39,6 +41,19 @@ if (given.length) {
     const file = 'src/' + m[1].replace(/^src\//, '');
     if (m[5].trim()) continue; // a note such as "fix exists on aliromman's branch": someone has it
     rows.push({ module: pathToMod(file), file, line: +m[2], error: m[4].trim().slice(0, 400) });
+  }
+  // Look-ahead rows too (errors the scratch build found behind stubbed declarations). The cheap fix mode judges
+  // these by reading the source; a real build settles them. (2026-11-25: ReBaseZeta.lean:40 was judged "already
+  // fixed by 947729fc72" without a build, marked processed for good, then fixed differently by another PR.)
+  const la = md.split(/^## /m).find(s => /^Look-ahead\b/.test(s)) || '';
+  const seen = new Set(rows.map(r => r.file));
+  for (const l of la.split('\n')) {
+    const m = l.match(/^\|\s*`([^`]+?\.lean):(\d+)`\s*\|\s*(\d+)\s*\|\s*([^|]*)\|\s*(.*?)\s*\|\s*$/);
+    if (!m) continue;
+    const file = 'src/' + m[1].replace(/^src\//, '');
+    if (seen.has(file)) continue;
+    seen.add(file);
+    rows.push({ module: pathToMod(file), file, line: +m[2], error: `look-ahead round ${m[3]}: ${m[5].trim().slice(0, 370)}` });
   }
 }
 const okFile = path.join(HOME, 'runs', 'attack-ok.txt');
