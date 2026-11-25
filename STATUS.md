@@ -1,6 +1,6 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-25 11:17 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-25 11:47 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
@@ -60,6 +60,10 @@ _none_
 
 ## Recent log
 ```
+2026-11-25 11:47 tip b35a3239c4 -> cloud check run dispatched
+2026-11-25 11:47 selftest run 45607498049: action OK, but CLAUDE_CODE_OAUTH_TOKEN secret contains a line break at char 78 (110 chars on 2 lines) -> owner must re-save it as one line. local-loop.sh started.
+2026-11-25 11:47 DEPLOYED cloud-first publishing: automation 3ad80e0 + main workflow. Job 1 (AI) read-only, hands fixes over as git bundles in the ready-branches artifact; job 2 (no AI, fresh runner, PR120_PAT only there) publishes via publish-ready.mjs --from-dir; workstation is fallback (local-loop.sh). Second review wf_c6289170-bd2 findings fixed. E2E bundle test passed locally (dry, nothing pu
+2026-11-25 11:47 list Updated 2026-11-25 11:41 UTC|look-ahead becbba8ce617 -> cloud fix run dispatched
 2026-11-25 11:10 cancelled token-test run 45599052768 (old workflow; its fixer agents could open PRs directly, against the new local-publishing rule). Review wf_9e890cd4-e0b: 3 blockers + ~15 majors in the cloud split; fixing before deploy.
 2026-11-25 11:03 change Updated 2026-11-25 10:58 UTC|look-ahead 2ef4fd33288f: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 11:00 change Updated 2026-11-25 10:58 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
@@ -68,8 +72,4 @@ _none_
 2026-11-25 10:50 change Updated 2026-11-25 10:48 UTC|look-ahead 2ef4fd33288f: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 10:44 change Updated 2026-11-25 10:39 UTC|look-ahead 2ef4fd33288f: no free rows ()
 2026-11-25 10:42 change Updated 2026-11-25 10:39 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
-2026-11-25 10:37 MEMORY: commit charge 99% (free ~300 MB of 32.6 GB); processes' private bytes total only ~8.5 GB, so ~24 GB is held outside processes (driver/shared sections; no WSL distro running). PowerShell cannot start (CLR 0x80004005); node OOMs at 200 MB. Killed 8 orphan 'find /' processes from 11-24 fixers (no effect). Paused heavy work (open-parity.mjs unfinished); asked the user to free 
-2026-11-25 10:34 change Updated 2026-11-25 10:29 UTC|look-ahead 2ef4fd33288f: no free rows (open 0 + look-ahead 0: none)
-2026-11-25 10:24 change Updated 2026-11-25 10:20 UTC|look-ahead 2ef4fd33288f: no free rows (open 0 + look-ahead 0: none)
-2026-11-25 10:19 change Updated 2026-11-25 10:11 UTC|look-ahead 2ef4fd33288f: no free rows (open 0 + look-ahead 0: none)
 ```
