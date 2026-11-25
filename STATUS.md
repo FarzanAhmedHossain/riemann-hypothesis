@@ -1,6 +1,6 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-25 06:52 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-25 07:12 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
@@ -60,6 +60,9 @@ _none_
 
 ## Recent log
 ```
+2026-11-25 07:11 change Updated 2026-11-25 06:58 UTC|look-ahead ee0bca8f40d1: no free rows (open 0 + look-ahead 0: none)
+2026-11-25 07:07 wpo7kiz99 Bundle0354:99 (look-ahead 94ff1f0fd0 r2): already-fixed at tip by 22f1682e9f (ExistsIsHaar matrix-instance exclusion restored); row came from old heads 9422ea4335/057825ae87; nothing published
+2026-11-25 07:02 change Updated 2026-11-25 06:46 UTC|look-ahead ee0bca8f40d1: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 06:50 change Updated 2026-11-25 06:35 UTC|look-ahead ee0bca8f40d1: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 06:30 change Updated 2026-11-25 06:24 UTC|look-ahead 131589d322ca: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 06:17 change Updated 2026-11-25 06:11 UTC|look-ahead 131589d322ca: no free rows (open 0 + look-ahead 0: none)
@@ -69,7 +72,4 @@ _none_
 2026-11-25 05:33 change Updated 2026-11-25 05:20 UTC|look-ahead 131589d322ca: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 05:24 change Updated 2026-11-25 05:20 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 04:49 change Updated 2026-11-25 04:45 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
-2026-11-25 04:15 change Updated 2026-11-25 04:12 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
-2026-11-25 04:08 change Updated 2026-11-25 03:39 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
-2026-11-25 03:42 change Updated 2026-11-25 03:39 UTC|look-ahead e16ea8607631: no free rows (open 0 + look-ahead 0: none)
 ```
