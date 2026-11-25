@@ -1,0 +1,24 @@
+{
+  "_doc": "Past fixer verdicts on shadow-scan 'replaced' findings, read by tools/scan-triage.mjs. A finding whose file suffix, token and capturing name match an entry is dropped. equivalent = the capture is real but the capturing copy has the same statement and argument order as what the original meant (Lean 4.36 then elaborates the same way); false-positive = not a global reference. Add an entry after every scanner batch.",
+  "fpTokens": ["G", "S", "J", "del", "chi", "hval", "hdim"],
+  "fpTokenPattern": "^h[A-Z0-9_'₀-₉]",
+  "verdicts": [
+    { "file": "InertiaEigenvalues/Bundle0795.lean", "tok": "mem_blockTriangular_singleBlock_of_le", "branch": "GlobalTheory.mem_blockTriangular_singleBlock_of_le", "verdict": "equivalent", "date": "2026-11-24" },
+    { "file": "GlobalGaussLaws/Bundle0016.lean", "tok": "thetaInt_smul", "branch": "PositivityTheory.Rg.Sw.Glob.thetaInt_smul", "verdict": "equivalent", "date": "2026-11-24" },
+    { "file": "MultihomogeneousSquares/Bundle0004.lean", "tok": "genPt_comp", "branch": "SquareStatements.genPt_comp", "verdict": "equivalent", "date": "2026-11-24" },
+    { "file": "GlobalGaussLaws/LamSing.lean", "tok": "mR_mul", "branch": "PositivityTheory.Rg.Sw.Glob.mR_mul", "verdict": "equivalent", "date": "2026-11-24" },
+    { "file": "DivisorProofs/Bundle0800.lean", "tok": "isTotallyComplex_of_algebra", "branch": "GlobalTheory.isTotallyComplex_of_algebra", "verdict": "equivalent", "date": "2026-11-24", "note": "same shape as merged #1263; harmless" },
+    { "file": "DenseThresholdCases/MapRepComp.lean", "tok": "gsp_map", "branch": "UpperTheory.V.Ws.gsp_map", "verdict": "equivalent", "date": "2026-11-24" },
+    { "file": "CuspidalTwists/Bundle0004.lean", "tok": "tn_map", "branch": "UpperTheory.V.Cu.tn_map", "verdict": "equivalent", "date": "2026-11-24" },
+    { "file": "CuspidalTwists/Bundle0004.lean", "tok": "flg_map", "branch": "UpperTheory.V.Cu.flg_map", "verdict": "equivalent", "date": "2026-11-24" },
+    { "file": "TraceDistributionsGL/Bundle0001.lean", "tok": "cj_mul", "branch": "PositivityTheory.RgUd.AB.Pf.cj_mul", "verdict": "equivalent", "date": "2026-11-24" },
+    { "file": "UnramifiedSplitting/Bundle0005.lean", "tok": "inv", "branch": "UpperTheory.ConvolutionTheory.R2.inv", "verdict": "false-positive", "date": "2026-11-24", "note": "induction case tags (scanner skips them since 2026-11-25)" },
+    { "file": "LatticeBasics/Bundle0024.lean", "tok": "sec", "branch": "GlobalTheory.ThK.Dbl.sec", "verdict": "false-positive", "date": "2026-11-24", "note": "variable binder {sec : ...}" },
+    { "file": "BlockDecomposition/ValuationLtOneOfEq.lean", "tok": "valExt", "branch": "GlobalTheory.valExt", "verdict": "false-positive", "date": "2026-11-24", "note": "the file's own local instance valExt" },
+    { "file": "DualFamilyCounting/Bundle0049.lean", "tok": "mem_cl_row", "branch": "Formalism.L2.SG.Pf.NcReal.JX.NOf.mem_cl_row", "verdict": "equivalent", "date": "2026-11-25" },
+    { "file": "DualFamilyCounting/Bundle0049.lean", "tok": "imHom", "branch": "Formalism.L2.SG.Pf.NcReal.JX.NOf.imHom", "verdict": "equivalent", "date": "2026-11-25" },
+    { "file": "DualFamilyCounting/Bundle0049.lean", "tok": "aaLb_inW", "branch": "Formalism.L2.SG.Pf.NcReal.JX.NOf.aaLb_inW", "verdict": "equivalent", "date": "2026-11-25" },
+    { "file": "DivisorProofs/Bundle1293.lean", "tok": "gm_res_pullU", "branch": "GlobalTheory.gm_res_pullU", "verdict": "equivalent", "date": "2026-11-25" },
+    { "file": "CompactIntegralFields/Bundle0007.lean", "tok": "nil", "branch": "UpperTheory.V.Ws.nil", "verdict": "false-positive", "date": "2026-11-25", "note": "induction case tag" }
+  ]
+}

@@ -44,12 +44,20 @@ Start one `pr120-fixer` subagent per row, all in parallel with the Agent tool. G
 
 ## MODE=scan: static name-capture scan of blocked modules
 1. The workflow has already run the scanner on the current tip (`bash tools/scan-shards.sh 8 6000 101 101`, a step before yours). Do not run it again: your commands time out long before 8 shards finish. Load `runs/shadow-findings-blocked.json`, the "replaced" findings. Skip `runs/shadow-findings-blocked-added.json` unless asked: it only flags possible overloads.
-2. Group findings by file. Drop the known false-positive patterns:
+2. Run `node tools/scan-triage.mjs runs/shadow-findings-blocked.json --max 8 > runs/scan-candidates.json`. It drops:
+   - tokens that are usually bound variables;
+   - findings a fixer already judged (`tools/scan-verdicts.json`: equivalent copies and false positives);
+   - files that anyone's open PR touches;
+   - files that changed in the last 3 hours.
+   Its stderr explains each count.
+3. Look at each candidate line yourself, and drop the remaining false-positive patterns:
    - bound variables, including untyped `{a b}` binders and names bound by `∀`, `∃` or `fun`;
    - structure-field assignments (`field args := …`);
-   - named arguments `(x := …)`.
-3. Check the survivors with `node tools/claim.mjs check <files…>`, and drop files that anyone's open PR touches or that changed in the last 3 hours (`git -C riemann-hypothesis log --since=3.hours origin/opt/collapse-and-consolidate-4.36 -- <file>`).
-4. Use `node tools/scan-args.cjs <candidates.json> 1 "scanner"` to turn up to 8 files into rows. Its input is `[{file, orig:[…], toks:[…], lines:[…]}]`. Then fix and publish them exactly as in MODE=fix.
+   - named arguments `(x := …)`;
+   - case tags in `induction … with | tag … =>` blocks;
+   - named holes `?name`.
+4. Use `node tools/scan-args.cjs runs/scan-candidates.json 1 "scanner" > runs/fast-args.json` to turn the candidates into rows. Then fix and publish them exactly as in MODE=fix.
+5. In your final report, list every fixer verdict of "equivalent copy" or "false positive" as a JSON line `{"file": "<Parent>/<Leaf>.lean", "tok": …, "branch": …, "verdict": …, "date": …}`. The workstation adds these lines to `tools/scan-verdicts.json`, so later runs skip those findings.
 
 A fixer for a scanner row must confirm the capture before editing:
 - the use is a global reference;

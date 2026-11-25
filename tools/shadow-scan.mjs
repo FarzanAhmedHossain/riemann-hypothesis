@@ -127,7 +127,7 @@ say(`[${el()}] pass 2a: ${nB} branch declarations (${byFullB.size} names)`);
 const closB = new Map(), closM = new Map();
 const visB = m => { if (!closB.has(m)) { if (closB.size > 50) closB.clear(); closB.set(m, closureOf(gB, m)); } return closB.get(m); };
 const visM = o => { if (!closM.has(o)) { if (closM.size > 500) closM.clear(); closM.set(o, gM[o] ? closureOf(gM, o) : null); } return closM.get(o); };
-const BINDER_RE = new RegExp(`(?:\\bfun\\b|λ|∀|∃!?|∑'?|∏|⨆|⨅|⋃|⋂|∫⁻?|∮|\\bintro\\b|\\bintros\\b|\\brintro\\b|\\bobtain\\b|\\blet\\b|\\bhave\\b|\\bset\\b|\\bgeneralize\\b|\\bchoose\\b|\\blift\\b|\\bcase\\b|\\bnext\\b|\\bby_cases\\b|\\bby_contra\\b|\\bwith\\b|\\bforall\\b|\\bexists\\b)\\s+([^,:=↦⊢∈∉⊆⊂⊇⊃<>≤≥≠]*)`, 'gu');
+const BINDER_RE = new RegExp(`(?:\\bfun\\b|λ|∀|∃!?|∑'?|∏|⨆|⨅|⋃|⋂|∫⁻?|∮|\\bintro\\b|\\bintros\\b|\\brintro\\b|\\bobtain\\b|\\blet\\b|\\bletI\\b|\\bhave\\b|\\bhaveI\\b|\\bset\\b|\\bgeneralize\\b|\\bchoose\\b|\\blift\\b|\\bcase\\b|\\bnext\\b|\\bby_cases\\b|\\bby_contra\\b|\\bwith\\b|\\bforall\\b|\\bexists\\b)\\s+([^,:=↦⊢∈∉⊆⊂⊇⊃<>≤≥≠]*)`, 'gu');
 const findings = []; const pending = []; const needMain = new Set(); let checked = 0;
 await catStream(REV, tPaths, (p, text) => {
   if (text == null) return;
@@ -179,7 +179,7 @@ await catStream(REV, tPaths, (p, text) => {
     const prefixes = []; for (let k = nsParts.length; k >= 1; k--) prefixes.push(nsParts.slice(0, k).join('.'));
     for (const mt of raw.matchAll(ID)) {
       const tok = mt[0]; const col = mt.index; const before = raw[col - 1] || ' '; const after = raw.slice(col + tok.length);
-      if (before === '.' || before === '`' || before === '\'') continue;
+      if (before === '.' || before === '`' || before === '\'' || before === '?') continue; // `?main` is a named hole
       if (tok === declName || tok === fieldName || lineSkip.has(tok)) continue;
       const head = tok.split('.')[0];
       if (KEYWORDS.has(tok) || KEYWORDS.has(head)) continue;
