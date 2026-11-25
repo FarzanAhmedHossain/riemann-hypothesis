@@ -133,11 +133,19 @@ await catStream(REV, tPaths, (p, text) => {
   if (text == null) return;
   const mod = pathToMod(p); const s = stripComments(text); const markers = markersOf(text);
   const B = visB(mod); const me = modIdx.get(mod); const origAt = origAtOf(markers, mod);
-  let declBinders = new Set(), secVars = new Set(), structFields = new Set(), lastOrig = null;
+  let declBinders = new Set(), secVars = new Set(), structFields = new Set(), lastOrig = null, tagIndent = -1;
   walk(s, (line, raw, nsDecl, decls, declName, fieldName, inStruct, ns) => {
     const o = origAt(line);
     if (o !== lastOrig) { secVars = new Set(); lastOrig = o; }
-    if (declName) { declBinders = new Set(); structFields = new Set(); }
+    if (declName) { declBinders = new Set(); structFields = new Set(); tagIndent = -1; }
+    // Case tags of tactic `induction/cases ... with | tag args => ...` alternatives are matched against the
+    // recursor's case names, never resolved as globals (2026-11-25 cloud scan 3: `| nil =>` in
+    // CompactIntegralFields/Bundle0007 flagged as captured by UpperTheory.V.Ws.nil).
+    const lineSkip = new Set();
+    const ind = raw.match(/^\s*/)[0].length;
+    if (tagIndent >= 0 && raw.trim() && ind <= tagIndent && !/^\s*\|/.test(raw)) tagIndent = -1;
+    if (/\b(?:induction|cases|induction'|cases')\b[^|]*\bwith\b/.test(raw)) tagIndent = ind;
+    if (tagIndent >= 0) for (const m of raw.matchAll(/\|\s*@?([^\s|=()]+)[^|]*?=>/gu)) lineSkip.add(m[1]);
     if (fieldName) structFields.add(fieldName);
     const isVar = /^\s*variable\b/.test(raw);
     for (const m of raw.matchAll(new RegExp(`[(\\[{⦃]\\s*((?:${IDC}\\s+)*${IDC})\\s*:(?!=)`, 'gu'))) for (const b of m[1].split(/\s+/)) (isVar ? secVars : declBinders).add(b);
@@ -172,7 +180,7 @@ await catStream(REV, tPaths, (p, text) => {
     for (const mt of raw.matchAll(ID)) {
       const tok = mt[0]; const col = mt.index; const before = raw[col - 1] || ' '; const after = raw.slice(col + tok.length);
       if (before === '.' || before === '`' || before === '\'') continue;
-      if (tok === declName || tok === fieldName) continue;
+      if (tok === declName || tok === fieldName || lineSkip.has(tok)) continue;
       const head = tok.split('.')[0];
       if (KEYWORDS.has(tok) || KEYWORDS.has(head)) continue;
       if (/^\s*:=/.test(after) && (/[({,]\s*$/.test(raw.slice(0, col)) || /^\s*$/.test(raw.slice(0, col)))) continue;
