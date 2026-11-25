@@ -1,6 +1,6 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-25 16:44 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-25 20:49 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [attack runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-attack.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
@@ -47,13 +47,17 @@ _none_
 - [#271](https://github.com/rohanarun/riemann-hypothesis/pull/271) Fix Development.AbelianVarietyTheory.Proofs.FlagMeasures.Bundle0282, merged 2026-11-23 20:11
 
 ## Cloud attack runs (build at the tip, fix, rebuild, publish)
-- [run 45656481878](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/runs/45656481878), started 2026-11-25 16:40 UTC, in progress: select: success; build-before : in progress; build-before ChartDensityIntegrable: in progress
+- [run 45656481878](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/runs/45656481878), started 2026-11-25 16:40 UTC, success: select: success; build-before : success; build-before ChartDensityIntegrable: success; record: success; fix: success; after-${{ matrix.r.idx }}: skipped; publish: skipped
 - [run 45654414268](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/runs/45654414268), started 2026-11-25 16:29 UTC, cancelled: select: success; build-before ChartDensityIntegrable: success; build-before : cancelled; fix: cancelled; record: cancelled; after-${{ matrix.r.idx }}: cancelled; publish: cancelled
 - [run 45631551714](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/runs/45631551714), started 2026-11-25 14:12 UTC, success: select: success; build-before IsMultiHomogMonoX: success; build-before ChartDensityIntegrable: success; record: success; fix: success; after-${{ matrix.r.idx }}: skipped; publish: skipped
 - [run 45627008871](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/runs/45627008871), started 2026-11-25 13:46 UTC, cancelled: select: success; build-before ChartDensityIntegrable: cancelled; build-before IsMultiHomogMonoX: cancelled; record: cancelled; fix: cancelled; build-after: cancelled; publish: cancelled
 
 ## Recent log
 ```
+2026-11-25 20:49 attack pipeline idle -> attack run dispatched (k=2)
+2026-11-25 20:49 tip e497a6603e -> cloud check run dispatched
+2026-11-25 20:49 list Updated 2026-11-25 17:03 UTC|look-ahead d41d8cd98f00 -> cloud fix run dispatched
+2026-11-25 17:02 tip 4e9c4d24ea -> cloud check run dispatched
 2026-11-25 16:41 REVIEW of hygiene pipeline found: sandbox could reach runner host (.git in mounted tree + sudo tee rewrite), publish side did not enforce one line, interacting candidates, -instance erasures, text-reconstructed checks. FIXED in automation d87819d (+ main for hygiene/attack/build): sandboxes build a .git-less copy, claim.mjs --one-instance-line, check = type_of% @Name, independence
 2026-11-25 16:36 tip ffe1a13e27 -> cloud check run dispatched
 2026-11-25 16:31 list Updated 2026-11-25 16:30 UTC|look-ahead d41d8cd98f00 -> cloud fix run dispatched
@@ -62,8 +66,4 @@ _none_
 2026-11-25 16:29 attack pipeline idle -> attack run dispatched (k=2)
 2026-11-25 16:28 attack 45631551714 done: ChartDensityIntegrable OK (1804 modules) and IsMultiHomogMonoX OK (2688) at 7fb6893d70; both Open rows stale; fix step skipped (nothing failing); recorded in attack-ok. Lake caches 1.36 GB + 0.85 GB. Hygiene dry run 45652066677: 1 verified (T2Space LocalFourierHaar:21), ContinuousSMul Interface:64 check-failed (needed), SecondCountableTopology MeasuresModu
 2026-11-25 16:15 DEPLOYED pr120-hygiene.yml (automation 0ac0878, main): redundant global Prop-class instances -> local instance, verified by lake build + inferInstance check file, no AI. instance-audit: 18 wildcard Prop instances, 12 candidates. Dry run 45652066677 dispatched (publish=false); independent review running. attack 45631551714: ChartDensityIntegrable builds OK at tip (1804 modules, row
-2026-11-25 16:05 tip 8d218e6089 -> cloud check run dispatched
-2026-11-25 16:04 list Updated 2026-11-25 16:03 UTC|look-ahead d41d8cd98f00 -> cloud fix run dispatched
-2026-11-25 16:04 list Updated 2026-11-25 16:03 UTC|look-ahead d41d8cd98f00 -> cloud fix dispatch FAILED
-2026-11-25 16:00 tip 8d218e6089 -> cloud check run dispatched
 ```
