@@ -160,6 +160,14 @@ jobs:
           if [ "$code" = "200" ]; then echo "use=api" >> "$GITHUB_OUTPUT";
           else echo "use=none" >> "$GITHUB_OUTPUT"; echo "### pr120-cloud skipped Claude: the Anthropic API rejected the key (HTTP $code): $msg" >> "$GITHUB_STEP_SUMMARY"; fi
 
+      - name: Drop sudo and Docker before the AI step (no way to read runner memory or become root)
+        if: steps.keycheck.outputs.use == 'oauth' || steps.keycheck.outputs.use == 'api'
+        run: |
+          sudo systemctl stop docker.socket docker containerd >/dev/null 2>&1 || true
+          sudo rm -f /etc/sudoers.d/runner /etc/sudoers.d/90-cloud-init-users
+          sudo -k
+          if sudo -n true 2>/dev/null; then echo "sudo is still available; refusing to start the AI step"; exit 1; fi
+
       - name: Claude selftest (one short reply; verifies the credential)
         id: selftest
         if: env.MODE == 'selftest' && (steps.keycheck.outputs.use == 'oauth' || steps.keycheck.outputs.use == 'api')
