@@ -1,6 +1,6 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-25 15:19 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-25 15:33 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [attack runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-attack.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
@@ -52,6 +52,11 @@ _none_
 
 ## Recent log
 ```
+2026-11-25 15:31 list Updated 2026-11-25 15:29 UTC|look-ahead d41d8cd98f00 -> cloud fix run dispatched
+2026-11-25 15:31 list Updated 2026-11-25 15:29 UTC|look-ahead d41d8cd98f00 -> cloud fix run dispatched
+2026-11-25 15:29 tip 8bb2796ec1 -> cloud check run dispatched
+2026-11-25 15:27 INVESTIGATION other contributors' PRs #1411-#1425: 11 preventive (ktakamatu unused duplicate decls via .olean usage data; josephch405 #1423 wildcard Module.Finite instances), none were list rows. #1411/#1412 = race we lost at 08:37. #1414 ReBaseZeta:40 = look-ahead row our fixer judged already-fixed by 947729fc72 (no build) and processed.txt hid for good; unproven either way (no s
+2026-11-25 15:27 tip 8bb2796ec1 -> cloud check run dispatched
 2026-11-25 15:17 DEPLOYED automation a1a3622 + main pr120-cloud.yml: prune job keeps newest 2 pr120-state caches per mode (cache was 10.2 GB full, 16 x 640 MB; pruned to 4). attack-select skips modules OK at an earlier tip while their closure is unchanged. Test run 45643406330 OK (prune deleted 1). Cancelled upstream 'checks' run 45643305140 triggered by the main update.
 2026-11-25 14:59 tip eac8fa4db4 -> cloud check run dispatched
 2026-11-25 14:58 list Updated 2026-11-25 14:57 UTC|look-ahead d41d8cd98f00 -> cloud fix run dispatched
@@ -59,9 +64,4 @@ _none_
 2026-11-25 14:32 list Updated 2026-11-25 14:32 UTC|look-ahead d41d8cd98f00 -> cloud fix run dispatched
 2026-11-25 14:28 tip 94167b224f -> cloud check run dispatched
 2026-11-25 14:17 list Updated 2026-11-25 14:17 UTC|look-ahead d41d8cd98f00 -> cloud fix run dispatched
-2026-11-25 14:12 cancelled attack run 45627008871 (old yml; AI step would have had sudo) and restarted as 45631551714 under the hardened pipeline (same two targets).
-2026-11-25 14:11 DEPLOYED automation 4f12719: Docker lake sandbox (smoke run 45630456288 OK: HomExtendsOverDVR built in container), gate-rules/diff-gate, verdict provenance by job window, AI steps without sudo/Docker (selftest 45630464863 OK).
-2026-11-25 14:07 list Updated 2026-11-25 14:06 UTC|look-ahead d41d8cd98f00 -> cloud fix run dispatched
-2026-11-25 13:57 tip 7fb6893d70 -> cloud check run dispatched
-2026-11-25 13:55 list Updated 2026-11-25 13:53 UTC|look-ahead d41d8cd98f00 -> cloud fix run dispatched
 ```
