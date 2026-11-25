@@ -36,6 +36,20 @@ if (cand.length) {
     say(`first-seen: ${before - cand.length} row(s) dropped (file changed after the row was first listed)`);
   } catch (e) { say('first-seen check failed, keeping candidates: ' + String(e.message || e).split('\n')[0]); }
 }
+// Drop rows a specific fix already addressed: a commit on the file titled "Fix <this module>" or quoting the
+// error text. (2026-11-25 06:01: Bundle0020:144 was fixed by 8e218d98ea at 01:51, but the row first appeared at
+// 05:20 because the reporting shard built an older head, so the first-seen filter could not catch it.)
+if (cand.length) {
+  const before = cand.length;
+  cand = cand.filter(r => {
+    const f = r.file.startsWith('src/') ? r.file : 'src/' + r.file;
+    const mod = f.replace(/^src\//, '').replace(/\.lean$/, '').split('/').join('.');
+    const errKey = String(r.error || '').replace(/\s+/g, ' ').slice(0, 60).trim();
+    const hit = (args) => { try { return execFileSync('git', ['-C', path.join(HOME, 'riemann-hypothesis'), 'log', '--format=%h', '-1', '-F', ...args, 'f941065836..origin/opt/collapse-and-consolidate-4.36', '--', f], { encoding: 'utf8' }).trim(); } catch { return ''; } };
+    return !(hit([`--grep=Fix ${mod}`]) || (errKey.length > 20 && hit([`--grep=${errKey}`])));
+  });
+  if (before !== cand.length) say(`fix-commit check: ${before - cand.length} row(s) dropped (a "Fix <module>" commit or one quoting the error exists)`);
+}
 if (cand.length) {
   let out = '';
   try { out = node('tools/claim.mjs', 'check', ...cand.map(r => r.file)); } catch (e) { out = String(e.stdout || ''); }
