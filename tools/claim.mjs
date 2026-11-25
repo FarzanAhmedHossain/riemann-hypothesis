@@ -16,6 +16,7 @@ import { promisify } from 'node:util';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { PROTECTED, BANNED } from './gate-rules.mjs';
 
 const pexec = promisify(execFile);
 const T0 = Date.now();
@@ -70,11 +71,7 @@ async function openPRsWithFiles(strict = false) {
   });
 }
 const IN_CLOUD = () => process.env.GITHUB_ACTIONS === 'true' || process.env.PR120_NO_PR === '1';
-const PROTECTED = /^(src\/(Challenge|Statements)\.lean|comparator\.json|lakefile.*|lean-toolchain|lake-manifest\.json)$/;
-// Forbidden in added text, checked on the joined text so multi-line attributes are caught too. Besides the
-// project's rules (no sorry/axioms/unsafe/extern), refuse commands a build-error fix never needs and that run
-// code at elaboration time.
-const BANNED = /\b(sorry|sorryAx|admit|admitGoal|axiom|unsafe|native_decide|implemented_by|initialize|builtin_initialize)\b|(@\[|\battribute\s*\[)[^\]]*\b(extern|init|builtin_init)\b|#eval|#exit|\brun_cmd\b|\brun_tac\b|\brun_elab\b|\brun_meta\b|debug\.skipKernelTC|Lean\.ofReduceBool|Lean\.trustCompiler|\bIO\.Process\b/;
+// PROTECTED and BANNED (forbidden added text) are shared with tools/diff-gate.mjs; see tools/gate-rules.mjs.
 
 function claimsFor(file, prs) {
   const f = normFile(file), mod = modOf(f), leaf = mod.split('.').pop(), tail = mod.split('.').slice(-2).join('.');
