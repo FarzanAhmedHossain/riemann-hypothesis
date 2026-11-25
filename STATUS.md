@@ -1,6 +1,6 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-25 13:42 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-25 13:52 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
@@ -60,6 +60,8 @@ _none_
 
 ## Recent log
 ```
+2026-11-25 13:46 DEPLOYED automation 48ca6ed + main (all 3 workflows): lake sandbox (user lb, no sudo, env -i), hardened attack, flat artifacts. Sandbox smoke test run 45625854316 OK (HomExtendsOverDVR, 275 modules, 2 min deps). First attack run dispatched on ChartDensityIntegrable + IsMultiHomogMonoX.
+2026-11-25 13:43 list Updated 2026-11-25 13:42 UTC|look-ahead d41d8cd98f00 -> cloud fix run dispatched
 2026-11-25 13:32 list Updated 2026-11-25 13:30 UTC|look-ahead d41d8cd98f00 -> cloud fix run dispatched
 2026-11-25 13:22 DEPLOYED pr120-attack.yml (automation 8685714 + main): select -> build-before (no secrets) -> fix (AI, read-only, bundles) -> build-after (no secrets) -> publish (PAT, verified only) -> record. Manual dispatch only; reviewing before first run. 13 Open rows have closure <= 6000.
 2026-11-25 13:20 list Updated 2026-11-25 13:19 UTC|look-ahead d41d8cd98f00 -> cloud fix run dispatched
@@ -70,6 +72,4 @@ _none_
 2026-11-25 12:49 list Updated 2026-11-25 12:48 UTC|look-ahead d41d8cd98f00 -> cloud fix run dispatched
 2026-11-25 12:39 list Updated 2026-11-25 12:34 UTC|look-ahead 99d9e18bdf07 -> cloud fix run dispatched
 2026-11-25 12:35 list Updated 2026-11-25 12:34 UTC|look-ahead 0844c4345b88 -> cloud fix run dispatched
-2026-11-25 12:25 list Updated 2026-11-25 12:23 UTC|look-ahead 88f38887c12d -> cloud fix run dispatched
-2026-11-25 12:21 tip 612c05de83 -> cloud check run dispatched
 ```
