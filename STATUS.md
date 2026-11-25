@@ -1,6 +1,6 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-25 09:04 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-25 09:14 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
@@ -60,6 +60,7 @@ _none_
 
 ## Recent log
 ```
+2026-11-25 09:08 change Updated 2026-11-25 09:04 UTC|look-ahead 99065fc46c02: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 09:02 parity clean at 374b1a37d2
 2026-11-25 09:01 change Updated 2026-11-25 08:53 UTC|look-ahead 99065fc46c02: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 08:58 disable-parity --kind {disable,instance,local,simp}: all clean at tip; watcher restarted as bo28512xw (tools/watch-list.sh) with parity on every tip change
@@ -71,5 +72,4 @@ _none_
 2026-11-25 08:31 ReBaseZeta:40 (wf_8ee7aeca-215): already-fixed by coordinator 947729fc72 (07:54Z) restoring main's own DCM.instMeasGL disable that #1345/8851789ca7 removed. Lesson: the main=True over-disable sweeps judged by closure only.
 2026-11-25 08:27 change Updated 2026-11-25 08:23 UTC|look-ahead 919e3413bada: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 08:18 change Updated 2026-11-25 08:14 UTC|look-ahead 919e3413bada: no free rows (open 0 + look-ahead 0: none)
-2026-11-25 08:09 change Updated 2026-11-25 08:04 UTC|look-ahead 919e3413bada: no free rows (open 0 + look-ahead 0: none)
 ```
