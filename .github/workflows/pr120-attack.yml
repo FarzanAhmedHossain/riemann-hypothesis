@@ -99,29 +99,31 @@ jobs:
       - name: Check out the branch at the selected tip
         uses: actions/checkout@v4
         with: { repository: "${{ env.UPSTREAM }}", ref: "${{ needs.select.outputs.tip }}", fetch-depth: 1, persist-credentials: false, path: src-tree }
+      - name: Copy the tree without .git (the sandbox never writes git metadata that the runner reads later)
+        run: set -o pipefail; mkdir build && git -C src-tree archive HEAD | tar -x -C build
       - name: Restore the project build (this module's, else any at this tip, else any)
         uses: actions/cache/restore@v4
         with:
-          path: src-tree/.lake/build
+          path: build/.lake/build
           key: pr120-lake-${{ needs.select.outputs.tip }}-${{ matrix.t.key }}
           restore-keys: |
             pr120-lake-${{ needs.select.outputs.tip }}-
             pr120-lake-
       - name: Sandbox, dependencies and the Mathlib cache (as the unprivileged user)
         run: |
-          bash toolkit/tools/lake-sandbox.sh setup src-tree
-          rc=$(bash toolkit/tools/lake-sandbox.sh run src-tree 40 deps.log env true); tail -3 deps.log; [ "$rc" = 0 ]
-          rc=$(bash toolkit/tools/lake-sandbox.sh run src-tree/.lake/packages/mathlib 40 cache.log exe cache get); tail -3 cache.log; [ "$rc" = 0 ]
+          bash toolkit/tools/lake-sandbox.sh setup build
+          rc=$(bash toolkit/tools/lake-sandbox.sh run build 40 deps.log env true); tail -3 deps.log; [ "$rc" = 0 ]
+          rc=$(bash toolkit/tools/lake-sandbox.sh run build/.lake/packages/mathlib 40 cache.log exe cache get); tail -3 cache.log; [ "$rc" = 0 ]
       - name: Build the module at the tip (as the unprivileged user)
         id: build
         run: |
-          rc=$(bash toolkit/tools/lake-sandbox.sh run src-tree 290 before.log build "$MOD")
+          rc=$(bash toolkit/tools/lake-sandbox.sh run build 290 before.log build "$MOD")
           echo "rc=$rc" >> "$GITHUB_OUTPUT"
       - name: Save the project build
         if: ${{ !cancelled() }}
         uses: actions/cache/save@v4
         with:
-          path: src-tree/.lake/build
+          path: build/.lake/build
           key: pr120-lake-${{ needs.select.outputs.tip }}-${{ matrix.t.key }}
       - name: Verdict
         env: { RC: "${{ steps.build.outputs.rc }}" }
@@ -286,21 +288,23 @@ jobs:
           git -c core.hooksPath=/dev/null checkout -q --detach "$head"
       - name: Content gate before anything is built (files, modes, forbidden constructs)
         run: node toolkit/tools/diff-gate.mjs src-tree "incoming/$RID.json"
+      - name: Copy the fixed tree without .git (the sandbox never writes git metadata that the runner reads later)
+        run: set -o pipefail; mkdir build && git -C src-tree archive HEAD | tar -x -C build
       - name: Restore exactly the target's build saved by build-before (before the AI ran; no fallback)
         uses: actions/cache/restore@v4
         with:
-          path: src-tree/.lake/build
+          path: build/.lake/build
           key: pr120-lake-${{ needs.select.outputs.tip }}-${{ matrix.r.key }}
       - name: Sandbox, dependencies and the Mathlib cache (as the unprivileged user)
         run: |
-          bash toolkit/tools/lake-sandbox.sh setup src-tree
-          rc=$(bash toolkit/tools/lake-sandbox.sh run src-tree 40 deps.log env true); tail -3 deps.log; [ "$rc" = 0 ]
-          rc=$(bash toolkit/tools/lake-sandbox.sh run src-tree/.lake/packages/mathlib 40 cache.log exe cache get); tail -3 cache.log; [ "$rc" = 0 ]
+          bash toolkit/tools/lake-sandbox.sh setup build
+          rc=$(bash toolkit/tools/lake-sandbox.sh run build 40 deps.log env true); tail -3 deps.log; [ "$rc" = 0 ]
+          rc=$(bash toolkit/tools/lake-sandbox.sh run build/.lake/packages/mathlib 40 cache.log exe cache get); tail -3 cache.log; [ "$rc" = 0 ]
       - name: Build the target and every module the fix touches (as the unprivileged user)
         id: build
         run: |
           read -r -a mods <<< "$MODS"
-          rc=$(bash toolkit/tools/lake-sandbox.sh run src-tree 290 after.log build "${mods[@]}")
+          rc=$(bash toolkit/tools/lake-sandbox.sh run build 290 after.log build "${mods[@]}")
           echo "rc=$rc" >> "$GITHUB_OUTPUT"
       - name: Verdict
         env: { RC: "${{ steps.build.outputs.rc }}" }

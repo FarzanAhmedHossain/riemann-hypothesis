@@ -16,7 +16,7 @@ import { promisify } from 'node:util';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PROTECTED, BANNED } from './gate-rules.mjs';
+import { PROTECTED, BANNED, checkOneInstanceLine } from './gate-rules.mjs';
 
 const pexec = promisify(execFile);
 const T0 = Date.now();
@@ -165,6 +165,9 @@ async function main() {
     // empty, so we never open a duplicate or empty PR.
     try { run('rebase', '-q', `origin/${BASE}`); } catch (e) { try { run('rebase', '--abort'); } catch {} throw new Error('rebase onto the fresh tip failed (conflict: someone changed the same lines); fix by hand'); }
     const sha = run('rev-parse', 'HEAD'); // everything below checks and pushes exactly this commit
+    // --one-instance-line (hygiene records): after the rebase, the change must be one commit on the tip that turns one
+    // `instance` into `local instance`, nothing else (tools/gate-rules.mjs).
+    if (flags.includes('--one-instance-line')) { const err = checkOneInstanceLine(run, `origin/${BASE}`, sha); if (err) throw new Error(err); }
     // What changed, with modes: only regular files (100644), only modified or added src/**/*.lean, never protected.
     const raw = run('diff', '--raw', '--no-renames', '--no-abbrev', `origin/${BASE}`, sha).split('\n').filter(Boolean).map(l => {
       const m = l.match(/^:(\d{6}) (\d{6}) [0-9a-f]+ [0-9a-f]+ ([A-Z])\d*\t(.+)$/);

@@ -1,36 +1,38 @@
 #!/usr/bin/env node
 // Preventive audit for pr120-hygiene.yml: global instances that every typeclass search for their class must try.
 //
-//   node tools/instance-audit.mjs [--k 4] [--min-reach 500] [--maxc 6000] [--json] [--rev <rev>] [--all]
+//   node tools/instance-audit.mjs [--k 4] [--min-reach 500] [--maxc 6000] [--json] [--rev <rev>] [--no-claims]
 //
-// A candidate is a global, non-private, default-priority `instance` of a Prop-valued class (Module.Finite,
+// A candidate is a named, global, non-private, default-priority `instance` of a Prop-valued class (Module.Finite,
 // T2Space, IsScalarTower, ...) whose explicit arguments are all variables. Its discrimination-tree key is then all
 // wildcards: every search for that class, in every module that sees it, tries it and backchains into its
-// hypotheses (the cost behind `typeclass` heartbeat timeouts). If the same instance can be found WITHOUT it (Mathlib
-// or another project instance provides it from the same hypotheses), `instance` -> `local instance` only removes
-// that cost. The name keeps working and it stays an instance in its own scope. Because the class is Prop-valued,
-// whatever instance is found instead is definitionally equal (proof irrelevance).
-// Precedent: #1423 (josephch405, merged 2026-11-25) for three Module.Finite / FiniteDimensional instances.
+// hypotheses (the cost behind `typeclass` heartbeat timeouts). If the same instance is found WITHOUT it (Mathlib or
+// another project instance provides it from the same hypotheses), `instance` -> `local instance` only removes that
+// cost: the name keeps working, it stays an instance in its own scope, and because the class is Prop-valued
+// whatever instance is found instead is definitionally equal (proof irrelevance). Precedent: #1423 (merged).
 //
-// This script decides nothing by itself. For each candidate it emits the one-line change and a check file:
-//     import <Module>
-//     example <the instance's hypotheses, exactly as Lean includes them> : <its type> := inferInstance
-// pr120-hygiene.yml builds the module with the change and then compiles the check file against it. The check file
-// imports the declaring module and opens no namespace, so it sees no more instances than any module that saw the
-// old instance (they all import the declaring module's public part). If it compiles, no search that found the old
-// instance can fail now. If anything is off in the reconstruction (a name that needs an `open`, a missed
-// hypothesis), the check fails and nothing is published.
-// Lean's rule for section variables (v4.10+): a variable is included when the header mentions it (or a variable
-// it depends on is included), and an instance-implicit variable when all the variables it mentions are included.
-// Files with `include`/`omit` are skipped. Duplicate copies of the same instance are reported as a hint.
-// JSON output: [{module, file, line, name, cls, old, new, check, reach, closure, canonical?}]
-import { BASE, importGraph, pathToMod, say, git, catStream } from './scanlib.mjs';
+// This script decides nothing. For each candidate it emits the one-line change and a check file
+// (tools/gate-rules.mjs hygieneCheckText):  import <Module>;  example : type_of% @<Name> := by intros; infer_instance
+// Lean supplies the instance's exact type. pr120-hygiene.yml builds the module with the change and compiles the
+// check. The check imports the declaring module and opens nothing, so it sees no more instances than any module
+// that saw the old instance (they all import the declaring module's public part); if it compiles, no search that
+// found the old instance loses one. A wrong full name only makes the check fail.
+// Also skipped: instances any `attribute [-instance]` line may name (it would fail once the name is no longer an
+// instance), and candidates that interact: if one picked candidate's module sees another's (or one of our open
+// hygiene PRs), their checks are not independent.
+// JSON output: [{module, file, line, name, full, cls, old, new, check, reach, closure}]
+import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import { HOME, REPO, BASE, importGraph, closureOf, pathToMod, say, git, catStream } from './scanlib.mjs';
+import { INST_DECL, toLocalInstance, hygieneCheckText, LEAN_NAME } from './gate-rules.mjs';
 
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
-const REV = opt('--rev', BASE), MIN_REACH = +opt('--min-reach', 500), K = +opt('--k', 0) || Infinity;
+const REV = opt('--rev', BASE), MIN_REACH = +opt('--min-reach', 500), K = +opt('--k', 0) || Infinity, MAXC = +opt('--maxc', 6000);
+const UPSTREAM = 'rohanarun/riemann-hypothesis';
 
-// Prop-valued classes from Mathlib (full names). Project classes declared `: Prop` are added below.
+// Prop-valued classes from Mathlib (full names). Project classes declared `... : Prop` (header on one line) are added.
 const PROP_CLASSES = new Set(`Module.Finite FiniteDimensional Module.Free Module.Flat Module.Projective Module.IsTorsionFree
 NoZeroSMulDivisors IsScalarTower SMulCommClass IsCentralScalar IsDomain Nontrivial CharZero CharP ExpChar IsNoetherian
 IsNoetherianRing IsArtinianRing Algebra.IsSeparable Algebra.IsIntegral Algebra.IsAlgebraic IsGalois Normal
@@ -40,28 +42,25 @@ Algebra.EssFiniteType Algebra.Etale Algebra.Smooth Algebra.Unramified FaithfulSM
 T0Space T1Space T2Space T3Space RegularSpace NormalSpace CompactSpace LocallyCompactSpace SecondCountableTopology
 FirstCountableTopology SeparableSpace ProperSpace CompleteSpace DiscreteTopology TotallyDisconnectedSpace
 IsTopologicalRing IsTopologicalGroup IsTopologicalAddGroup ContinuousMul ContinuousAdd ContinuousSMul ContinuousConstSMul
-MeasurableSingletonClass BorelSpace OpensMeasurableSpace SFinite IsFiniteMeasure IsProbabilityMeasure SigmaFinite
+MeasurableSingletonClass BorelSpace OpensMeasurableSpace
 MeasureTheory.SFinite MeasureTheory.IsFiniteMeasure MeasureTheory.IsProbabilityMeasure MeasureTheory.SigmaFinite
 MeasureTheory.Measure.IsHaarMeasure MeasureTheory.Measure.IsAddHaarMeasure MeasureTheory.Measure.Regular
 Finite Countable Infinite Subsingleton Fact IsEmpty Nonempty Ideal.IsPrime Ideal.IsMaximal Ideal.IsRadical
 Subgroup.Normal Subgroup.FiniteIndex AddSubgroup.Normal IsCyclic IsSimpleGroup IsSimpleOrder IsSemisimpleModule
 IsSimpleModule IsReduced IsField IsAlgClosed PerfectField IsSepClosed`.split(/\s+/).filter(Boolean));
+try {
+  for (const l of git('grep', '-h', '-E', '^\\s*class\\s+.*:\\s*Prop\\s*(where)?\\s*$', REV, '--', 'src').split('\n')) {
+    const m = l.match(/^\s*class\s+(?:inductive\s+)?([^\s(\[{:]+)/); if (m) PROP_CLASSES.add(m[1]);
+  }
+} catch {}
 
 const g = importGraph(REV);
-// Modules re-exported by m: m itself plus everything reachable through `public import`s.
-const pubCache = new Map();
-const pubClosure = m => {
-  if (pubCache.has(m)) return pubCache.get(m);
-  const seen = new Set([m]); const st = [m];
-  while (st.length) { const x = st.pop(); for (const i of g[x]?.imports || []) if (i.pub && g[i.mod] && !seen.has(i.mod)) { seen.add(i.mod); st.push(i.mod); } }
-  pubCache.set(m, seen); return seen;
-};
-// Modules that see m's declarations: R = m and every module re-exporting m; then R plus every direct importer of R.
 const pubRev = new Map(), allRev = new Map();
 for (const [m, v] of Object.entries(g)) for (const i of v.imports || []) if (g[i.mod]) {
   (allRev.get(i.mod) || allRev.set(i.mod, []).get(i.mod)).push(m);
   if (i.pub) (pubRev.get(i.mod) || pubRev.set(i.mod, []).get(i.mod)).push(m);
 }
+// Modules that see m's declarations: m and every module re-exporting it, plus every direct importer of those.
 const seersOf = m => {
   const R = new Set([m]); const st = [m];
   while (st.length) { const x = st.pop(); for (const y of pubRev.get(x) || []) if (!R.has(y)) { R.add(y); st.push(y); } }
@@ -93,59 +92,59 @@ function topIndex(s, tok) {
   return -1;
 }
 const IDENT = /^[\p{L}_][\p{L}\p{N}_'₀-₉!?]*$/u;
-// A binder group "(a b : T)" -> [{kind, names, type}], "[C x]" -> [{kind:'[', names:[], type:'C x'}]
-function parseBinder(grp) {
-  const kind = grp[0], inner = grp.slice(1, -1).trim();
-  const c = topIndex(inner, ':');
-  if (kind === '[') {
-    if (c >= 0 && IDENT.test(inner.slice(0, c).trim())) return { kind, names: [inner.slice(0, c).trim()], type: inner.slice(c + 1).trim() };
-    return { kind, names: [], type: inner };
+const binderNames = grp => { const inner = grp.slice(1, -1); const c = topIndex(inner, ':'); return c < 0 ? (grp[0] === '[' ? [] : inner.trim().split(/\s+/).filter(x => IDENT.test(x))) : inner.slice(0, c).trim().split(/\s+/).filter(x => IDENT.test(x)); };
+// Blank out comments (nested block comments, line comments, doc comments) and string literals, keeping line breaks.
+function stripComments(text) {
+  let out = '', depth = 0, inStr = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i], n = text[i + 1];
+    if (depth === 0 && !inStr && c === '"') { inStr = true; out += ' '; continue; }
+    if (inStr) { if (c === '\\') { out += ' '; if (n !== undefined) { out += n === '\n' ? '\n' : ' '; i++; } continue; } if (c === '"') inStr = false; out += c === '\n' ? '\n' : ' '; continue; }
+    if (c === '/' && n === '-') { depth++; out += '  '; i++; continue; }
+    if (depth > 0 && c === '-' && n === '/') { depth--; out += '  '; i++; continue; }
+    if (depth > 0) { out += c === '\n' ? '\n' : ' '; continue; }
+    if (c === '-' && n === '-') { while (i < text.length && text[i] !== '\n') { out += ' '; i++; } if (i < text.length) out += '\n'; continue; }
+    out += c;
   }
-  if (c < 0) return { kind, names: inner.split(/\s+/).filter(x => IDENT.test(x)), type: '' };
-  return { kind, names: inner.slice(0, c).trim().split(/\s+/).filter(x => IDENT.test(x)), type: inner.slice(c + 1).trim() };
+  return out;
 }
-const tokensOf = s => new Set((s.match(/[\p{L}_][\p{L}\p{N}_'₀-₉!?]*/gu) || []));
-const MAXC = +opt('--maxc', 6000);
 
-// ---- pass 1: project Prop classes ----
+// ---- names that some `attribute [-instance]` line erases (anywhere in src) ----
+const erased = new Set();
 try {
-  for (const l of git('grep', '-h', '-E', '^\\s*class\\s+[^ ]+.*:\\s*Prop\\b', REV, '--', 'src').split('\n')) {
-    const m = l.match(/class\s+(?:inductive\s+)?([^\s(\[{:]+)/); if (m) PROP_CLASSES.add(m[1]);
+  for (const l of git('grep', '-h', '-E', 'attribute\\s*\\[[^]]*-\\s*instance', REV, '--', 'src').split('\n')) {
+    const after = l.slice(l.lastIndexOf(']') + 1).replace(/\bin\s*$/, '');
+    for (const t of after.split(/\s+/)) if (t) erased.add(t.replace(/^_root_\./, ''));
   }
 } catch {}
-const BY_SHORT = new Map();
-for (const c of PROP_CLASSES) { const s = c.split('.').pop(); (BY_SHORT.get(s) || BY_SHORT.set(s, []).get(s)).push(c); }
+const isErased = (full, name) => erased.has(full) || erased.has(name) || [...erased].some(t => full.endsWith('.' + t) || t.endsWith('.' + name));
 
-// ---- pass 2: global instances ----
+// ---- pass: global instances ----
 const files = git('grep', '-l', '-E', '^\\s*(@\\[[^]]*\\]\\s*)?((noncomputable|protected|nonrec)\\s+)*instance\\b', REV, '--', 'src')
   .split('\n').filter(Boolean).map(l => l.replace(/^[^:]+:/, '')).filter(f => f.endsWith('.lean'));
-// Modifiers then the `instance` keyword. `private` is not matched (not exported), nor `local`/`scoped`.
-const INST = /^(\s*(?:@\[[^\]]*\]\s*)?(?:(?:noncomputable|protected|nonrec)\s+)*)instance\b/;
-const SCOPE_OPEN = /^\s*(@\[[^\]]*\]\s*)?((public|private|noncomputable)\s+)*section\b|^\s*namespace\b/;
+const SECTION = /^\s*(@\[[^\]]*\]\s*)?((public|private|noncomputable)\s+)*section\b/;
 const insts = [];
-await catStream(REV, files, (file, text) => {
-  if (!text) return;
-  const lines = text.split('\n');
-  if (lines.some(l => /^\s*(include|omit)\b/.test(l))) return;
-  const universes = lines.filter(l => /^\s*universe\s/.test(l)).map(l => l.trim());
-  const frames = [{ vars: [] }];
+let skippedErased = 0;
+await catStream(REV, files, (file, raw) => {
+  if (!raw) return;
+  const rawLines = raw.split('\n');
+  const lines = stripComments(raw).split('\n');
+  if (lines.length !== rawLines.length) return; // the comment stripper lost track: skip the file
+  const frames = [{ ns: [], vars: [] }];
   for (let i = 0; i < lines.length; i++) {
     const L = lines[i];
-    if (SCOPE_OPEN.test(L)) { frames.push({ vars: [] }); continue; }
-    if (/^\s*end\b/.test(L) && frames.length > 1) { frames.pop(); continue; }
+    const nm = L.match(/^\s*namespace\s+(\S+)/);
+    if (nm) { frames.push({ ns: nm[1].split('.'), vars: [] }); continue; }
+    if (SECTION.test(L)) { frames.push({ ns: [], vars: [] }); continue; }
+    if (/^\s*end\b/.test(L)) { if (frames.length > 1) frames.pop(); continue; }
     if (/^\s*variable\b/.test(L)) {
-      let s = L.replace(/^\s*variable\b/, ''); let j = i + 1;
-      for (; j < lines.length && /^\s+[([{⦃]/.test(lines[j]); j++) s += ' ' + lines[j];
-      if (/\bin\s*$/.test(s)) continue; // `variable ... in`: applies to the next command only; leaving it out only makes the check stricter
-      for (const grp of topLevel(s)) if (/^[([{⦃]/.test(grp)) {
-        const b = parseBinder(grp);
-        if (b.kind !== '[' && !b.type) continue; // binder-kind update of an existing variable: no new hypothesis
-        frames[frames.length - 1].vars.push({ ...b, raw: grp });
-      }
+      let s = L.replace(/^\s*variable\b/, '');
+      for (let j = i + 1; j < lines.length && /^\s+[([{⦃]/.test(lines[j]); j++) s += ' ' + lines[j];
+      if (!/\bin\s*$/.test(s)) for (const grp of topLevel(s)) if (/^[([{⦃]/.test(grp)) frames[frames.length - 1].vars.push(...binderNames(grp));
       continue;
     }
-    const m = L.match(INST);
-    if (!m) continue;
+    const m = L.match(INST_DECL);
+    if (!m || rawLines[i] !== L) continue; // the declaration line itself must carry no comment or string
     let sig = L.slice(m[0].length);
     for (let j = i + 1; j < Math.min(lines.length, i + 25) && topIndex(sig, ':=') < 0 && !/\swhere\b/.test(sig) && !/^\s*\|/.test(lines[j]); j++) sig += ' ' + lines[j].trim();
     let end = topIndex(sig, ':='); const w = sig.search(/\swhere\b/); if (w >= 0 && (end < 0 || w < end)) end = w;
@@ -153,75 +152,32 @@ await catStream(REV, files, (file, text) => {
     sig = sig.slice(0, end);
     if (/^\s*\(priority\s*:=/.test(sig)) continue;
     const parts = topLevel(sig);
-    let name = '';
-    if (parts.length && !/^[([{⦃:]/.test(parts[0])) name = parts.shift();
+    if (!parts.length || /^[([{⦃:]/.test(parts[0])) continue; // unnamed: the check needs the name
+    const name = parts.shift();
     const own = [];
-    while (parts.length && /^[([{⦃]/.test(parts[0])) { const grp = parts.shift(); own.push({ ...parseBinder(grp), raw: grp }); }
+    while (parts.length && /^[([{⦃]/.test(parts[0])) own.push(parts.shift());
     if (!parts.length || !parts[0].startsWith(':')) continue;
     const type = parts.join(' ').replace(/^:\s*/, '').trim();
     const tp = topLevel(type);
-    if (tp.length < 2) continue;
-    const head = tp[0], args = tp.slice(1);
-    let cls = PROP_CLASSES.has(head) ? head : '';
-    if (!cls && !head.includes('.')) for (const full of BY_SHORT.get(head) || []) if (full === head) cls = full;
-    if (!cls) continue; // a short name that only an `open` would resolve: skip rather than guess
-    const varB = frames.flatMap(f => f.vars);
-    const bound = new Set([...varB, ...own].flatMap(b => b.names));
-    if (!args.every(a => bound.has(a))) continue;
-    // Lean's inclusion rule for section variables.
-    const incl = new Set([...tokensOf(type), ...own.flatMap(b => [...tokensOf(b.type), ...b.names])].filter(x => bound.has(x)));
-    for (let grew = true; grew;) {
-      grew = false;
-      for (const b of varB) if (b.kind !== '[' && b.names.some(n => incl.has(n)))
-        for (const x of tokensOf(b.type)) if (bound.has(x) && !incl.has(x)) { incl.add(x); grew = true; }
-    }
-    const used = [];
-    for (const b of varB) {
-      if (b.kind === '[') { const vs = [...tokensOf(b.type)].filter(x => bound.has(x)); if (vs.length && vs.every(x => incl.has(x))) used.push(b); }
-      else if (b.names.some(n => incl.has(n))) { const names = b.names.filter(n => incl.has(n)); used.push({ ...b, names, raw: `${b.kind}${names.join(' ')} : ${b.type}${{ '(': ')', '{': '}', '⦃': '⦄' }[b.kind]}` }); }
-    }
-    const hypsAll = [...used, ...own].filter(b => b.kind === '[');
-    // A hypothesis of the class itself would make the check trivial: skip.
-    if (hypsAll.some(b => topLevel(b.type)[0] === head || topLevel(b.type)[0] === cls)) continue;
-    const check = [
-      'set_option autoImplicit false',
-      'set_option relaxedAutoImplicit false',
-      ...universes,
-      `import ${pathToMod(file)}`,
-    ];
-    // `import` must come first in a Lean file; options and universes go after it.
-    const checkText = [check[check.length - 1], '', ...check.slice(0, -1), '',
-      `example ${[...used, ...own].map(b => b.raw.replace(/\s+/g, ' ')).join(' ')} : ${type.replace(/\s+/g, ' ')} := inferInstance`, ''].join('\n');
-    // Signature key for the duplicate hint.
-    const ren = new Map(); const rn = x => { if (!ren.has(x)) ren.set(x, `v${ren.size}`); return ren.get(x); };
-    for (const a of args) rn(a);
-    const norm = s => s.replace(/[\p{L}_][\p{L}\p{N}_'₀-₉!?]*/gu, x => (incl.has(x) ? rn(x) : x)).replace(/\s+/g, ' ').trim();
-    const sigKey = `${cls} ${args.map(rn).join(' ')} | ${hypsAll.map(b => norm(b.type)).sort().join(' ; ')}`;
-    insts.push({ module: pathToMod(file), file, line: i + 1, name, cls, sig: sigKey, old: L, new: L.slice(0, m[1].length) + 'local ' + L.slice(m[1].length), check: checkText });
+    if (tp.length < 2 || !PROP_CLASSES.has(tp[0])) continue; // full class names only; one that needs an `open` is skipped
+    const bound = new Set([...frames.flatMap(f => f.vars), ...own.flatMap(binderNames)]);
+    if (!tp.slice(1).every(a => bound.has(a))) continue;
+    const full = name.startsWith('_root_.') ? name.slice(7) : [...frames.flatMap(f => f.ns), name].join('.');
+    if (!LEAN_NAME.test(full)) continue;
+    if (isErased(full, name.split('.').pop())) { skippedErased++; continue; }
+    const mod = pathToMod(file);
+    insts.push({ module: mod, file, line: i + 1, name, full, cls: tp[0], old: rawLines[i], new: toLocalInstance(rawLines[i]), check: hygieneCheckText(mod, full) });
   }
 });
-say(`${insts.length} global, default-priority instances of Prop classes with all-variable arguments`);
-
-// ---- duplicate hint ----
-const bySig = new Map();
-for (const x of insts) (bySig.get(x.sig) || bySig.set(x.sig, []).get(x.sig)).push(x);
-for (const [, grp] of bySig) if (grp.length > 1) for (const b of grp) {
-  const pc = pubClosure(b.module);
-  const c = grp.find(a => a !== b && a.module !== b.module && pc.has(a.module));
-  if (c) b.canonical = { module: c.module, file: c.file, line: c.line, name: c.name };
-}
+say(`${insts.length} named global default-priority instances of Prop classes with all-variable arguments (${skippedErased} more skipped: an \`attribute [-instance]\` line may name them)`);
 
 // ---- filters: reach, build cone, earlier verdicts, open PRs ----
 let res = insts;
 for (const c of res) c.reach = seersOf(c.module);
-res = res.filter(c => argv.includes('--all') || c.reach >= MIN_REACH);
+res = res.filter(c => c.reach >= MIN_REACH);
 for (const c of res) c.closure = buildCone(c.module);
-res = res.filter(c => argv.includes('--all') || c.closure <= MAXC);
-// runs/hygiene-done.txt: "<module>:<line> <tip>" for candidates already tried; skipped while their file is unchanged.
-const { execFileSync } = await import('node:child_process');
-const fs = await import('node:fs');
-const path = await import('node:path');
-const { HOME, REPO } = await import('./scanlib.mjs');
+res = res.filter(c => c.closure <= MAXC);
+// runs/hygiene-done.txt: "<module>:<line> <tip>" per candidate already tried; skipped while its file is unchanged.
 const doneFile = path.join(HOME, 'runs', 'hygiene-done.txt');
 const done = new Map();
 for (const l of (fs.existsSync(doneFile) ? fs.readFileSync(doneFile, 'utf8') : '').split('\n')) {
@@ -231,17 +187,30 @@ const unchangedSince = (t, file) => { try { execFileSync('git', ['-C', REPO, 'di
 const before = res.length;
 res = res.filter(c => !(done.get(`${c.module}:${c.line}`) || []).some(t => unchangedSince(t, c.file)));
 if (before !== res.length) say(`skipped ${before - res.length} candidate(s) already tried at an unchanged file`);
-if (res.length && !argv.includes('--no-claims')) {
+// Our open hygiene PRs: their instances are still global upstream, so candidates that see them are not independent.
+const pending = new Set();
+if (!argv.includes('--no-claims')) {
   let o = '';
   try { o = execFileSync('node', ['tools/claim.mjs', 'check', ...new Set(res.map(c => c.file))], { cwd: HOME, encoding: 'utf8', maxBuffer: 1 << 26 }); }
-  catch (e) { o = String(e.stdout || ''); if (!o) throw new Error('claim check failed'); }
+  catch (e) { o = String(e.stdout || ''); if (!o && res.length) throw new Error('claim check failed'); }
   const claimed = new Set(o.split('\n').filter(l => l.startsWith('CLAIMED')).map(l => l.split(/\s+/)[1]));
   const b2 = res.length; res = res.filter(c => !claimed.has(c.file));
   if (b2 !== res.length) say(`dropped ${b2 - res.length} candidate(s) in files an open PR touches`);
+  const owner = process.env.GITHUB_REPOSITORY_OWNER || execFileSync('gh', ['api', 'user', '--jq', '.login'], { encoding: 'utf8' }).trim();
+  const prs = JSON.parse(execFileSync('gh', ['pr', 'list', '-R', UPSTREAM, '--state', 'open', '--author', owner, '--limit', '200', '--json', 'title,files'], { encoding: 'utf8', maxBuffer: 1 << 26 }));
+  for (const p of prs) if (/^Make redundant global /.test(p.title)) for (const f of p.files || []) pending.add(pathToMod(f.path));
+  if (pending.size) say(`${pending.size} module(s) with our open hygiene PRs`);
 }
-// One candidate per file per run (each becomes its own PR; two edits to one file would conflict).
-const seenF = new Set();
-res = res.sort((a, b) => b.reach - a.reach).filter(c => !seenF.has(c.file) && seenF.add(c.file));
-say(`${res.length} candidate(s) (reach >= ${MIN_REACH}, build cone <= ${MAXC}); picked ${Math.min(K, res.length)}`);
-if (argv.includes('--json')) process.stdout.write(JSON.stringify(res.slice(0, K)));
-else for (const c of res.slice(0, K)) console.log(`${String(c.reach).padStart(6)} see ${String(c.closure).padStart(6)} cone  ${c.cls}  ${c.file}:${c.line} ${c.name}${c.canonical ? `  (copy of ${c.canonical.file}:${c.canonical.line})` : ''}\n${c.check.replace(/^/gm, '        | ')}`);
+// Independence: keep a candidate only if no kept candidate's module (or a pending one) is visible from it, or it from them.
+const vis = new Map(); const visOf = m => { if (!vis.has(m)) vis.set(m, closureOf(g, m)); return vis.get(m); };
+const kept = [];
+let deferred = 0;
+for (const c of res.sort((a, b) => b.reach - a.reach)) {
+  if (kept.length >= K) break;
+  const others = [...kept.map(k => k.module), ...pending];
+  if (kept.some(k => k.file === c.file) || others.some(o => visOf(c.module).has(o) || visOf(o).has(c.module))) { deferred++; continue; }
+  kept.push(c);
+}
+say(`${res.length} candidate(s) (reach >= ${MIN_REACH}, build cone <= ${MAXC}); picked ${kept.length} independent one(s)${deferred ? `, ${deferred} deferred (same file, or they see each other)` : ''}`);
+if (argv.includes('--json')) process.stdout.write(JSON.stringify(kept));
+else for (const c of kept) console.log(`${String(c.reach).padStart(6)} see ${String(c.closure).padStart(6)} cone  ${c.cls}  ${c.file}:${c.line} ${c.full}`);

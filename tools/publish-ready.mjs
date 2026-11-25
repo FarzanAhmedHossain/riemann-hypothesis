@@ -20,7 +20,7 @@
 //       - refuses files any open PR touches (other people's, or our own on another branch), failing closed;
 //       - pushes the checked commit to fix/<leaf> and opens the PR.
 //
-//   node tools/publish-ready.mjs [--from-dir <dir>] [--dry] [--days 7] [--republish-closed]
+//   node tools/publish-ready.mjs [--from-dir <dir> [--hygiene]] [--dry] [--days 7] [--republish-closed]
 //
 // Output, one line per record: PUBLISHED / CLOUD-PUBLISHED / SKIPPED / RETRY / FAILED. A run's report is
 // printed the first time it is seen, with every line prefixed by "  | " (untrusted cloud text). State is kept in
@@ -36,6 +36,8 @@ const FORK = process.env.FORK_REPO || 'FarzanAhmedHossain/riemann-hypothesis';
 const OWNER = FORK.split('/')[0].toLowerCase();
 const UP = 'rohanarun/riemann-hypothesis';
 const WF_PATHS = ['.github/workflows/pr120-cloud.yml', '.github/workflows/pr120-attack.yml', '.github/workflows/pr120-hygiene.yml']; // attack and hygiene runs upload only build-verified records
+// Records from hygiene runs may only change one `instance` into `local instance` (claim.mjs --one-instance-line).
+const HYGIENE_PATH = '.github/workflows/pr120-hygiene.yml';
 const argv = process.argv.slice(2);
 const opt = k => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : ''; };
 const DRY = argv.includes('--dry');
@@ -118,7 +120,7 @@ function invalid(rec, runKey) {
   return '';
 }
 
-function publishRecord(runKey, rec, dir) {
+function publishRecord(runKey, rec, dir, strict) {
   const key = `${runKey}|${rec.id}`;
   const st = state.records[key];
   if (!st || st.final || (st.next && Date.now() < st.next)) return;
@@ -155,7 +157,7 @@ function publishRecord(runKey, rec, dir) {
     let out = '';
     try {
       out = node(['tools/claim.mjs', 'publish', `wt/${TREE}`, '--target', rec.target, '--body-file', bodyFile, '--block-own', '--expect-files', rec.files.join(','),
-        ...(rec.title.startsWith('Fix ') ? [] : ['--title', rec.title])],
+        ...(rec.title.startsWith('Fix ') ? [] : ['--title', rec.title]), ...(strict ? ['--one-instance-line'] : [])],
         { PR120_NO_PR: '', GITHUB_ACTIONS: '' });
     } catch (e) {
       const so = String(e.stdout || '').trim(), se = String(e.stderr || '').trim();
@@ -179,7 +181,7 @@ function publishRecord(runKey, rec, dir) {
 }
 
 // Register every record of a run before touching any, so an interrupted pass cannot lose one.
-function handleRun(runKey, dir) {
+function handleRun(runKey, dir, strict) {
   const all = walk(dir);
   showReport(runKey, all);
   // Records are the .json files that carry an id; each one's bundle sits next to it, whatever folder level the
@@ -196,7 +198,7 @@ function handleRun(runKey, dir) {
     valid.push({ rec, at });
   }
   save();
-  for (const { rec, at } of valid) publishRecord(runKey, rec, at);
+  for (const { rec, at } of valid) publishRecord(runKey, rec, at, strict);
   r.done = Object.entries(state.records).filter(([k]) => k.startsWith(runKey + '|')).every(([, v]) => v.final);
   save();
 }
@@ -209,7 +211,7 @@ try {
     const runKey = process.env.GITHUB_RUN_ID || 'dir';
     const dir = path.resolve(FROM_DIR);
     if (!fs.existsSync(dir) || !walk(dir).some(f => f.endsWith('.json'))) say('no ready records');
-    else handleRun(runKey, dir);
+    else handleRun(runKey, dir, argv.includes('--hygiene'));
   } else {
     // Workstation fallback: every non-expired ready-branches artifact of a completed run of our workflow.
     const list = [];
@@ -236,7 +238,7 @@ try {
         else execFileSync('unzip', ['-q', '-o', zip, '-d', dir], { stdio: 'ignore' });
         fs.unlinkSync(zip);
       } catch (e) { say(`RETRY run ${a.run}: artifact download failed (${clean(String(e.stderr || e.message).split('\n').filter(Boolean).pop(), 160)})`); continue; }
-      handleRun(runKey, dir);
+      handleRun(runKey, dir, run.path === HYGIENE_PATH);
     }
     if (!list.length) say('no ready-branches artifacts');
   }
