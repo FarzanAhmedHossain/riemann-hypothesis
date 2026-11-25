@@ -1,6 +1,6 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-25 08:23 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-25 08:33 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
@@ -60,6 +60,9 @@ _none_
 
 ## Recent log
 ```
+2026-11-25 08:31 overdisable-audit.mjs (28 main=True commits, 1521 hunks): 0 left (strict name match fixed after; QL.instMeasGL had masked DCM.instMeasGL via last-component match). disable-parity.mjs (main's 408 disable lines in 395 modules vs tip; recall-tested at 94ff1f0fd0 = finds ReBaseZeta family): 12 non-bundled AutomorphicVarieties modules miss their own main line 'attribute [-instance] For
+2026-11-25 08:31 ReBaseZeta:40 (wf_8ee7aeca-215): already-fixed by coordinator 947729fc72 (07:54Z) restoring main's own DCM.instMeasGL disable that #1345/8851789ca7 removed. Lesson: the main=True over-disable sweeps judged by closure only.
+2026-11-25 08:27 change Updated 2026-11-25 08:23 UTC|look-ahead 919e3413bada: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 08:18 change Updated 2026-11-25 08:14 UTC|look-ahead 919e3413bada: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 08:09 change Updated 2026-11-25 08:04 UTC|look-ahead 919e3413bada: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 08:04 change Updated 2026-11-25 07:54 UTC|look-ahead 919e3413bada: no free rows (open 0 + look-ahead 0: none)
@@ -69,7 +72,4 @@ _none_
 2026-11-25 07:47 cloud scan 3 (45566538355, 31 min, tip 94ff1f0fd0): 134 replaced findings in 50 files. Dropped chi/G/del/S/J/h* binder FPs, ?main hole, letI alg, files examined before (5 no-fix, 3 equivalent copies re-checked: capturing modules unchanged), 7 claimed by #18 -> 3 free files launched as wdft8a17c / wf_e5c94f9a-f63 (w58 Bundle0049, w59 Bundle1293, w60 CompactIntegralFields/Bundle0007
 2026-11-25 07:40 change Updated 2026-11-25 07:32 UTC|look-ahead ee0bca8f40d1: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 07:36 change Updated 2026-11-25 07:32 UTC|look-ahead 6517e509c3c7: no free rows (open 0 + look-ahead 0: none)
-2026-11-25 07:25 change Updated 2026-11-25 07:21 UTC|look-ahead ee0bca8f40d1: no free rows (open 0 + look-ahead 0: none)
-2026-11-25 07:18 change Updated 2026-11-25 07:09 UTC|look-ahead ee0bca8f40d1: no free rows (open 0 + look-ahead 0: none)
-2026-11-25 07:14 list 06:58/07:10: 46 open rows, 0 free (all have later fix commits or were processed); compiled 43,930 unchanged since before 06:11. Dispatched cloud scan run 45566538355 on tip 94ff1f0fd0 (scanner steps only need PR120_PAT; Claude step will skip without credits)
 ```
