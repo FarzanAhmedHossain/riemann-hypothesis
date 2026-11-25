@@ -1,6 +1,6 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-25 16:34 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-25 16:44 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [attack runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-attack.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
@@ -47,12 +47,15 @@ _none_
 - [#271](https://github.com/rohanarun/riemann-hypothesis/pull/271) Fix Development.AbelianVarietyTheory.Proofs.FlagMeasures.Bundle0282, merged 2026-11-23 20:11
 
 ## Cloud attack runs (build at the tip, fix, rebuild, publish)
-- [run 45654414268](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/runs/45654414268), started 2026-11-25 16:29 UTC, in progress: select: success; build-before ChartDensityIntegrable: in progress; build-before : in progress
+- [run 45656481878](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/runs/45656481878), started 2026-11-25 16:40 UTC, in progress: select: success; build-before : in progress; build-before ChartDensityIntegrable: in progress
+- [run 45654414268](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/runs/45654414268), started 2026-11-25 16:29 UTC, cancelled: select: success; build-before ChartDensityIntegrable: success; build-before : cancelled; fix: cancelled; record: cancelled; after-${{ matrix.r.idx }}: cancelled; publish: cancelled
 - [run 45631551714](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/runs/45631551714), started 2026-11-25 14:12 UTC, success: select: success; build-before IsMultiHomogMonoX: success; build-before ChartDensityIntegrable: success; record: success; fix: success; after-${{ matrix.r.idx }}: skipped; publish: skipped
 - [run 45627008871](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/runs/45627008871), started 2026-11-25 13:46 UTC, cancelled: select: success; build-before ChartDensityIntegrable: cancelled; build-before IsMultiHomogMonoX: cancelled; record: cancelled; fix: cancelled; build-after: cancelled; publish: cancelled
 
 ## Recent log
 ```
+2026-11-25 16:41 REVIEW of hygiene pipeline found: sandbox could reach runner host (.git in mounted tree + sudo tee rewrite), publish side did not enforce one line, interacting candidates, -instance erasures, text-reconstructed checks. FIXED in automation d87819d (+ main for hygiene/attack/build): sandboxes build a .git-less copy, claim.mjs --one-instance-line, check = type_of% @Name, independence
+2026-11-25 16:36 tip ffe1a13e27 -> cloud check run dispatched
 2026-11-25 16:31 list Updated 2026-11-25 16:30 UTC|look-ahead d41d8cd98f00 -> cloud fix run dispatched
 2026-11-25 16:31 tip ffe1a13e27 -> cloud check run dispatched
 2026-11-25 16:31 list Updated 2026-11-25 16:30 UTC|look-ahead d41d8cd98f00 -> cloud fix run dispatched
@@ -63,6 +66,4 @@ _none_
 2026-11-25 16:04 list Updated 2026-11-25 16:03 UTC|look-ahead d41d8cd98f00 -> cloud fix run dispatched
 2026-11-25 16:04 list Updated 2026-11-25 16:03 UTC|look-ahead d41d8cd98f00 -> cloud fix dispatch FAILED
 2026-11-25 16:00 tip 8d218e6089 -> cloud check run dispatched
-2026-11-25 15:31 list Updated 2026-11-25 15:29 UTC|look-ahead d41d8cd98f00 -> cloud fix run dispatched
-2026-11-25 15:31 list Updated 2026-11-25 15:29 UTC|look-ahead d41d8cd98f00 -> cloud fix run dispatched
 ```
