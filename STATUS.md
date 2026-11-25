@@ -1,6 +1,6 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-25 10:35 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-25 10:47 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
@@ -60,6 +60,9 @@ _none_
 
 ## Recent log
 ```
+2026-11-25 10:44 change Updated 2026-11-25 10:39 UTC|look-ahead 2ef4fd33288f: no free rows ()
+2026-11-25 10:42 change Updated 2026-11-25 10:39 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
+2026-11-25 10:37 MEMORY: commit charge 99% (free ~300 MB of 32.6 GB); processes' private bytes total only ~8.5 GB, so ~24 GB is held outside processes (driver/shared sections; no WSL distro running). PowerShell cannot start (CLR 0x80004005); node OOMs at 200 MB. Killed 8 orphan 'find /' processes from 11-24 fixers (no effect). Paused heavy work (open-parity.mjs unfinished); asked the user to free 
 2026-11-25 10:34 change Updated 2026-11-25 10:29 UTC|look-ahead 2ef4fd33288f: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 10:24 change Updated 2026-11-25 10:20 UTC|look-ahead 2ef4fd33288f: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 10:19 change Updated 2026-11-25 10:11 UTC|look-ahead 2ef4fd33288f: no free rows (open 0 + look-ahead 0: none)
@@ -69,7 +72,4 @@ _none_
 2026-11-25 09:57 change Updated 2026-11-25 09:52 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 09:48 change Updated 2026-11-25 09:42 UTC|look-ahead 2ef4fd33288f: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 09:47 cloud scan 4 (45584215544, tip fc339a91f6): 111 replaced findings in 31 files (scan 3: 134 in 50; scanner FP fixes removed ?main/letI/case tags). scan-triage: 77 binder-name tokens (all seen in scan 3), 17 judged, 6 files claimed by #18 -> 0 candidates. Name-capture class is exhausted at this tip.
-2026-11-25 09:38 parity clean at fc339a91f6
-2026-11-25 09:37 change Updated 2026-11-25 09:32 UTC|look-ahead 2ef4fd33288f: no free rows (open 0 + look-ahead 0: none)
-2026-11-25 09:29 change Updated 2026-11-25 09:23 UTC|look-ahead b074f86dc5d6: no free rows (open 0 + look-ahead 0: none)
 ```
