@@ -1,6 +1,6 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-25 09:34 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-25 09:44 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
@@ -60,6 +60,8 @@ _none_
 
 ## Recent log
 ```
+2026-11-25 09:38 parity clean at fc339a91f6
+2026-11-25 09:37 change Updated 2026-11-25 09:32 UTC|look-ahead 2ef4fd33288f: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 09:29 change Updated 2026-11-25 09:23 UTC|look-ahead b074f86dc5d6: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 09:28 list 09:23 look-ahead (9 rows, Shard1 session 9422ea4335 rounds 3-4): all fixed at tip. SatDict:67/LocUnr:212 introN = SatDict/LocUnr defs stubbed after ArchimedeanSchwartz/HodgeTateFromSandwich:28 failed (missing DCM.instMeasGL, restored by #1411 edd17e304a, not in any session head); GammaLaurentFactors/HodgeTateFromSandwich:30 same family; ExistsSelectedRealization:61 (attribute
 2026-11-25 09:24 section-stale.mjs: all 46 Open rows have >=1 targeted fix commit in their own section since consolidation (25 have none in the 8h window before first listing, but those are day-old rows re-listed at 19:13 on 11-24). Build stuck at 43,930 since before 06:11; nothing unattended in Open. Cloud scan 45584215544 running on the current tip.
@@ -70,6 +72,4 @@ _none_
 2026-11-25 08:58 disable-parity --kind {disable,instance,local,simp}: all clean at tip; watcher restarted as bo28512xw (tools/watch-list.sh) with parity on every tip change
 2026-11-25 08:57 change Updated 2026-11-25 08:53 UTC|look-ahead d41d8cd98f00: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 08:55 DCM 12-module restore: both skeptics valid, but publish found nothing to do: rmsnorm landed the identical change edd17e304a (#1411, merged 08:37Z) while our skeptics ran (~23 min). disable-parity now 0. Lesson: byte-identical restores of main's text with a merged precedent (947729fc72) publish immediately, no skeptics.
-2026-11-25 08:48 change Updated 2026-11-25 08:44 UTC|look-ahead 99065fc46c02: no free rows (open 0 + look-ahead 0: none)
-2026-11-25 08:38 change Updated 2026-11-25 08:33 UTC|look-ahead 99065fc46c02: no free rows (open 0 + look-ahead 0: none)
 ```
