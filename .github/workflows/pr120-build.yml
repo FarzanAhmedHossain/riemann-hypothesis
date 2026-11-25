@@ -65,16 +65,17 @@ jobs:
         run: |
           p="src-tree/src/$(printf '%s' "$MOD" | tr . /).lean"; test -f "$p" || { echo "no such module file: $p"; exit 1; }
           t0=$(date +%s)
-          bash toolkit/tools/lake-sandbox.sh setup src-tree
-          rc=$(bash toolkit/tools/lake-sandbox.sh run src-tree 40 deps.log env true); tail -3 deps.log; [ "$rc" = 0 ]
-          rc=$(bash toolkit/tools/lake-sandbox.sh run src-tree/.lake/packages/mathlib 40 cache.log exe cache get); tail -3 cache.log; [ "$rc" = 0 ]
+          set -o pipefail; mkdir build && git -C src-tree archive HEAD | tar -x -C build   # the sandbox never sees .git
+          bash toolkit/tools/lake-sandbox.sh setup build
+          rc=$(bash toolkit/tools/lake-sandbox.sh run build 40 deps.log env true); tail -3 deps.log; [ "$rc" = 0 ]
+          rc=$(bash toolkit/tools/lake-sandbox.sh run build/.lake/packages/mathlib 40 cache.log exe cache get); tail -3 cache.log; [ "$rc" = 0 ]
           echo "dependencies + Mathlib cache: $(( ($(date +%s) - t0) / 60 )) min"
 
       - name: Build the module (as the unprivileged user)
         id: build
         run: |
           t0=$(date +%s)
-          rc=$(bash toolkit/tools/lake-sandbox.sh run src-tree 290 build.log build "$MOD")
+          rc=$(bash toolkit/tools/lake-sandbox.sh run build 290 build.log build "$MOD")
           echo "rc=$rc" >> "$GITHUB_OUTPUT"
           mins=$(( ($(date +%s) - t0) / 60 ))
           node toolkit/tools/build-errors.mjs build.log "$MOD" "$rc" > verdict.json
