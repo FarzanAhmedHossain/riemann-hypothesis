@@ -35,7 +35,7 @@ const HOME = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FORK = process.env.FORK_REPO || 'FarzanAhmedHossain/riemann-hypothesis';
 const OWNER = FORK.split('/')[0].toLowerCase();
 const UP = 'rohanarun/riemann-hypothesis';
-const WF_PATH = '.github/workflows/pr120-cloud.yml';
+const WF_PATHS = ['.github/workflows/pr120-cloud.yml', '.github/workflows/pr120-attack.yml']; // attack runs upload only build-verified records
 const argv = process.argv.slice(2);
 const opt = k => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : ''; };
 const DRY = argv.includes('--dry');
@@ -219,8 +219,8 @@ try {
       const runKey = `${a.run}-${a.id}`; // one key per artifact (re-runs upload a new artifact)
       if (state.runs[runKey]?.done || state.runs[runKey]?.rejected) continue;
       const run = JSON.parse(gh('api', `repos/${FORK}/actions/runs/${a.run}`, '--jq', '{event,path,head_branch,status}'));
-      if (run.path !== WF_PATH || run.head_branch !== 'main' || !['schedule', 'workflow_dispatch'].includes(run.event)) {
-        say(`SKIPPED run ${a.run}: not a ${WF_PATH} run on main (event ${clean(run.event, 30)}, branch ${clean(run.head_branch, 60)})`);
+      if (!WF_PATHS.includes(run.path) || run.head_branch !== 'main' || !['schedule', 'workflow_dispatch'].includes(run.event)) {
+        say(`SKIPPED run ${a.run}: not a pr120-cloud/pr120-attack run on main (event ${clean(run.event, 30)}, branch ${clean(run.head_branch, 60)})`);
         state.runs[runKey] = { rejected: true }; save(); continue;
       }
       if (run.status !== 'completed') continue; // job 2 has not had its chance yet
