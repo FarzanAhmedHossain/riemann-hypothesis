@@ -1,6 +1,6 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-25 00:45 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-25 00:57 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
@@ -51,7 +51,7 @@ _none_
 |---|---|
 | 0 | done (46 findings) |
 | 1 | done (37 findings) |
-| 2 | running: pass 2a: 267360 branch declarations (263879 names) |
+| 2 | running: [21712:0000027EC0F92000]  1081564 ms: Mark-Compact 1583.3 (1 |
 | 3 | pending |
 | 4 | pending |
 | 5 | pending |
