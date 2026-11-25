@@ -330,11 +330,12 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
     steps:
-      - name: Delete older state caches
+      - name: Delete older state caches (housekeeping; an API hiccup never fails the run)
+        continue-on-error: true
         run: |
           gh api "repos/$REPO/actions/caches?per_page=100&sort=created_at&direction=desc" \
             --jq '.actions_caches[] | select(.key | test("^pr120-state-[a-z]+-[0-9]+-[0-9]+$")) | "\(.id) \(.key)"' |
           awk '{ split($2, a, "-"); if (++seen[a[3]] > 2) print $1, $2 }' |
           while read -r id key; do
-            gh api -X DELETE "repos/$REPO/actions/caches/$id" > /dev/null && echo "deleted $key"
+            gh api -X DELETE "repos/$REPO/actions/caches/$id" > /dev/null && echo "deleted $key" || echo "could not delete $key"
           done
