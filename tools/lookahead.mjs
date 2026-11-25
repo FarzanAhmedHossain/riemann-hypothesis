@@ -96,6 +96,26 @@ if (!includeChanged) files = files.filter(f => f.ls.length > 0);
 // contributors and the maintainer are working (e.g. 88fa0b1ab6 rewrote opens in ten files right after the session),
 // so their rows are unreliable; untouched files are the cleanest open targets.
 if (argv.includes('--untouched-only')) files = files.filter(f => !f.changed.length);
+// Later-round rows whose file imports a LOWER-round table file that changed since the oldest session head: the
+// later error is usually an artifact of that dependency being stubbed with sorry (2026-11-25 09:23: SatDict:67
+// and LocUnr:212 "introN failed" because the SatDict/LocUnr defs in HodgeTateFromSandwich (round 3) were
+// stubbed; #1411 had already fixed HodgeTateFromSandwich). Drop them unless --include-dependent.
+if (!argv.includes('--include-dependent') && files.length) {
+  try {
+    const { importGraph, closureOf, pathToMod } = await import('./scanlib.mjs');
+    const gB = importGraph(BASE);
+    const changedLow = [...byFile.entries()].map(([file, ls]) => ({ mod: pathToMod(file), round: Math.min(...ls.map(l => l.round)), file }))
+      .filter(x => { try { return git('log', '-1', '--format=%h', `${oldest}..${BASE}`, '--', x.file) !== ''; } catch { return false; } });
+    const before = files.length;
+    files = files.filter(f => {
+      const clos = closureOf(gB, pathToMod(f.file));
+      const dep = changedLow.find(x => x.file !== f.file && x.round < f.round && clos.has(x.mod));
+      if (dep) say(`  ${f.file.split('/').pop()} (round ${f.round}) depends on ${dep.file.split('/').slice(-2).join('/')} (round ${dep.round}, changed since ${oldest}): skipped`);
+      return !dep;
+    });
+    if (before !== files.length) say(`dropped ${before - files.length} later-round file(s) behind a changed lower-round dependency`);
+  } catch (e) { say('dependency check failed, keeping files: ' + String(e.message || e).split('\n')[0]); }
+}
 say(`${files.length} files with locations whose line was not edited since the session (${nChanged} files changed since it; ${files.filter(f => f.changed.length).length} of those still have untouched locations)`);
 if (files.length) {
   const out = node('tools/claim.mjs', 'check', ...files.map(f => f.file));
