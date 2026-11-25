@@ -1,6 +1,6 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-25 07:22 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-25 07:33 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
@@ -60,6 +60,7 @@ _none_
 
 ## Recent log
 ```
+2026-11-25 07:25 change Updated 2026-11-25 07:21 UTC|look-ahead ee0bca8f40d1: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 07:18 change Updated 2026-11-25 07:09 UTC|look-ahead ee0bca8f40d1: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 07:14 list 06:58/07:10: 46 open rows, 0 free (all have later fix commits or were processed); compiled 43,930 unchanged since before 06:11. Dispatched cloud scan run 45566538355 on tip 94ff1f0fd0 (scanner steps only need PR120_PAT; Claude step will skip without credits)
 2026-11-25 07:11 change Updated 2026-11-25 06:58 UTC|look-ahead ee0bca8f40d1: no free rows (open 0 + look-ahead 0: none)
@@ -71,5 +72,4 @@ _none_
 2026-11-25 06:14 06:01 row Bundle0020:144 already fixed (8e218d98ea / #1303 at 01:51; row first listed 05:20 from an older shard head). prep.mjs now drops rows with a 'Fix <Module>' commit or a commit quoting the error (synced to automation).
 2026-11-25 05:54 change Updated 2026-11-25 05:48 UTC|look-ahead 131589d322ca: no free rows (open 0 + look-ahead 0: none)
 2026-11-25 05:42 change Updated 2026-11-25 05:36 UTC|look-ahead 131589d322ca: no free rows (open 0 + look-ahead 0: none)
-2026-11-25 05:33 change Updated 2026-11-25 05:20 UTC|look-ahead 131589d322ca: no free rows (open 0 + look-ahead 0: none)
 ```
