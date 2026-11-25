@@ -1,6 +1,6 @@
 # PR #120 fixing: progress
 
-Updated 2026-11-25 15:33 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
+Updated 2026-11-25 15:53 UTC by the workstation run. Fixes are published as `Fix <Module>` PRs from [FarzanAhmedHossain/riemann-hypothesis](https://github.com/FarzanAhmedHossain/riemann-hypothesis) to [rohanarun/riemann-hypothesis](https://github.com/rohanarun/riemann-hypothesis/tree/opt/collapse-and-consolidate-4.36).
 
 **Links:** [all our PRs](https://github.com/rohanarun/riemann-hypothesis/pulls?q=is%3Apr+author%3AFarzanAhmedHossain) · [cloud workflow runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-cloud.yml) · [attack runs](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/workflows/pr120-attack.yml) · [failure list](https://github.com/rohanarun/alpoge-rh-replay/blob/main/PR120-BUGS.md)
 
@@ -47,7 +47,7 @@ _none_
 - [#271](https://github.com/rohanarun/riemann-hypothesis/pull/271) Fix Development.AbelianVarietyTheory.Proofs.FlagMeasures.Bundle0282, merged 2026-11-23 20:11
 
 ## Cloud attack runs (build at the tip, fix, rebuild, publish)
-- [run 45631551714](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/runs/45631551714), started 2026-11-25 14:12 UTC, in progress: select: success; build-before IsMultiHomogMonoX: in progress; build-before ChartDensityIntegrable: in progress
+- [run 45631551714](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/runs/45631551714), started 2026-11-25 14:12 UTC, in progress: select: success; build-before IsMultiHomogMonoX: in progress; build-before ChartDensityIntegrable: success
 - [run 45627008871](https://github.com/FarzanAhmedHossain/riemann-hypothesis/actions/runs/45627008871), started 2026-11-25 13:46 UTC, cancelled: select: success; build-before ChartDensityIntegrable: cancelled; build-before IsMultiHomogMonoX: cancelled; record: cancelled; fix: cancelled; build-after: cancelled; publish: cancelled
 
 ## Recent log
