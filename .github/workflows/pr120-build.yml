@@ -1,8 +1,9 @@
 # Builds ONE module of the PR #120 branch on a GitHub runner, to verify an error or a fix with Lean itself.
 # Mathlib comes from its own cache; the project modules in the target's import closure are compiled from source.
-# Measured 2026-11-25: closures are 1.3k–27.5k project modules (median 8.6k), so only small ones fit in one run
-# (the job limit is 6 hours). Building runs code from the upstream repository, so this workflow has NO secrets
-# and a read-only token; never add secrets here.
+# Measured 2026-11-25: HostLocVan (1,579 modules) took 81 minutes on a 4-vCPU runner; closures are 1.3k–27.5k
+# project modules (median 8.6k), so only small ones fit in one run (6-hour job limit).
+# Building runs code from the upstream repository, so: no secrets, a read-only token, and every `lake` command runs
+# as an unprivileged user with an empty environment (tools/lake-sandbox.sh).
 name: pr120-build
 
 on:
@@ -47,6 +48,10 @@ jobs:
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost || true
           df -h / | tail -1
 
+      - name: Check out the toolkit
+        uses: actions/checkout@v4
+        with: { ref: automation, persist-credentials: false, path: toolkit }
+
       - name: Check out the module's repository
         uses: actions/checkout@v4
         with:
@@ -54,40 +59,30 @@ jobs:
           ref: ${{ github.event.inputs.ref }}
           fetch-depth: 1
           persist-credentials: false
+          path: src-tree
 
-      - name: Install elan and the toolchain
+      - name: Sandbox, dependencies and the Mathlib cache (as the unprivileged user)
         run: |
-          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
-          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-          "$HOME/.elan/bin/lake" --version
-
-      - name: Dependencies and the Mathlib cache
-        run: |
-          p="src/$(printf '%s' "$MOD" | tr . /).lean"; test -f "$p" || { echo "no such module file: $p"; exit 1; }
+          p="src-tree/src/$(printf '%s' "$MOD" | tr . /).lean"; test -f "$p" || { echo "no such module file: $p"; exit 1; }
           t0=$(date +%s)
-          timeout 40m lake env true
-          (cd .lake/packages/mathlib && timeout 40m lake exe cache get)
+          bash toolkit/tools/lake-sandbox.sh setup src-tree
+          rc=$(bash toolkit/tools/lake-sandbox.sh run src-tree 40 deps.log env true); tail -3 deps.log; [ "$rc" = 0 ]
+          rc=$(bash toolkit/tools/lake-sandbox.sh run src-tree/.lake/packages/mathlib 40 cache.log exe cache get); tail -3 cache.log; [ "$rc" = 0 ]
           echo "dependencies + Mathlib cache: $(( ($(date +%s) - t0) / 60 )) min"
-          df -h / | tail -1
 
-      - name: Build the module
+      - name: Build the module (as the unprivileged user)
         id: build
         run: |
           t0=$(date +%s)
-          set +e
-          timeout 290m lake build "$MOD" > build.log 2>&1; rc=$?
-          set -e
-          mins=$(( ($(date +%s) - t0) / 60 ))
-          built=$(grep -c 'Built ' build.log || true)
-          errs=$(grep -cE '^error:|: error:' build.log || true)
+          rc=$(bash toolkit/tools/lake-sandbox.sh run src-tree 290 build.log build "$MOD")
           echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          mins=$(( ($(date +%s) - t0) / 60 ))
+          node toolkit/tools/build-errors.mjs build.log "$MOD" "$rc" > verdict.json
           {
             echo "### pr120-build: $MOD"
             echo "- source: $SRC_REPO @ $SRC_REF"
-            echo "- exit code $rc after $mins min (124 = time limit); $built modules built; $errs error line(s)"
-            echo '```'
-            grep -E '^error:|: error:|✖|^warning: .*declaration uses .sorry' build.log | head -40
-            echo '```'
+            echo "- exit code $rc after $mins min (124 = time limit)"
+            node -e "const v=require('./verdict.json');console.log('- verdict: '+v.status+'; '+v.built+' modules built; '+v.errors.length+' error(s) in the module; failing imports: '+(v.depFailures.join(', ')||'none'));for(const e of v.errors.slice(0,5))console.log('\n'+e.file+':'+e.line+':'+e.col+'\n\`\`\`\n'+e.text.slice(0,1500)+'\n\`\`\`')"
             echo "last lines:"
             echo '```'
             tail -15 build.log
@@ -95,10 +90,12 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
           df -h / | tail -1
 
-      - name: Upload the build log
+      - name: Upload the build log and verdict
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: build-log
-          path: build.log
+          path: |
+            build.log
+            verdict.json
           retention-days: 7
