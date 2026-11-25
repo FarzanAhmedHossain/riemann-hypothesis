@@ -37,24 +37,44 @@ const branchOf = f => 'fix/' + modOf(f).split('.').slice(-2).join('-').replace(/
 const leafDir = f => modOf(f).split('.').slice(-2).join('-').replace(/[^A-Za-z0-9_-]/g, '');
 const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-async function openPRsWithFiles() {
-  const prs = JSON.parse(gh('pr', 'list', '-R', UP, '--state', 'open', '--limit', '300',
-    '--json', 'number,title,headRefName,headRefOid,author,isDraft,createdAt'));
+// strict: throw when any open PR's file list cannot be fetched (publish must fail closed, not treat that PR as
+// touching nothing).
+async function openPRsWithFiles(strict = false) {
+  const LIMIT = 1000;
+  const prs = JSON.parse(gh('pr', 'list', '-R', UP, '--state', 'open', '--limit', String(LIMIT),
+    '--json', 'number,title,headRefName,headRefOid,author,isDraft,createdAt,changedFiles'));
+  if (strict && prs.length >= LIMIT) throw new Error(`cannot verify claims: ${prs.length} open PRs (the listing may be truncated); not publishing`);
   const cache = fs.existsSync(CACHE) ? JSON.parse(fs.readFileSync(CACHE, 'utf8')) : {};
   const need = prs.filter(p => !cache[p.number] || cache[p.number].oid !== p.headRefOid);
   if (process.env.CLAIM_DEBUG) console.error(`${prs.length} open PRs listed in ${((Date.now() - T0) / 1000).toFixed(1)}s; fetching files for ${need.length}`);
+  const failed = [];
   for (let i = 0; i < need.length; i += 8) {
     await Promise.all(need.slice(i, i + 8).map(async p => {
-      try {
-        const { stdout } = await pexec('gh', ['api', '--paginate', `repos/${UP}/pulls/${p.number}/files?per_page=100`, '--jq', '.[].filename'],
-          { maxBuffer: 1 << 26 });
-        cache[p.number] = { oid: p.headRefOid, files: stdout.split('\n').filter(Boolean) };
-      } catch { cache[p.number] = { oid: '?', files: [] }; }
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const { stdout } = await pexec('gh', ['api', '--paginate', `repos/${UP}/pulls/${p.number}/files?per_page=100`, '--jq', '.[].filename'],
+            { maxBuffer: 1 << 26 });
+          cache[p.number] = { oid: p.headRefOid, files: stdout.split('\n').filter(Boolean) };
+          return;
+        } catch {}
+      }
+      delete cache[p.number]; failed.push(p.number);
     }));
   }
   fs.writeFileSync(CACHE, JSON.stringify(cache));
-  return prs.map(p => ({ ...p, files: cache[p.number]?.files || [] }));
+  if (strict && failed.length) throw new Error(`cannot verify claims: file lists of open PRs ${failed.map(n => '#' + n).join(', ')} could not be fetched; not publishing`);
+  // The files endpoint caps at 3000 entries: a PR with more changed files than we could list touches "everything".
+  return prs.map(p => {
+    const files = cache[p.number]?.files || [];
+    return { ...p, files, partial: typeof p.changedFiles === 'number' && files.length < p.changedFiles };
+  });
 }
+const IN_CLOUD = () => process.env.GITHUB_ACTIONS === 'true' || process.env.PR120_NO_PR === '1';
+const PROTECTED = /^(src\/(Challenge|Statements)\.lean|comparator\.json|lakefile.*|lean-toolchain|lake-manifest\.json)$/;
+// Forbidden in added text, checked on the joined text so multi-line attributes are caught too. Besides the
+// project's rules (no sorry/axioms/unsafe/extern), refuse commands a build-error fix never needs and that run
+// code at elaboration time.
+const BANNED = /\b(sorry|sorryAx|admit|admitGoal|axiom|unsafe|native_decide|implemented_by|initialize|builtin_initialize)\b|(@\[|\battribute\s*\[)[^\]]*\b(extern|init|builtin_init)\b|#eval|#exit|\brun_cmd\b|\brun_tac\b|\brun_elab\b|\brun_meta\b|debug\.skipKernelTC|Lean\.ofReduceBool|Lean\.trustCompiler|\bIO\.Process\b/;
 
 function claimsFor(file, prs) {
   const f = normFile(file), mod = modOf(f), leaf = mod.split('.').pop(), tail = mod.split('.').slice(-2).join('.');
@@ -62,18 +82,23 @@ function claimsFor(file, prs) {
   for (const p of prs) {
     const why = [];
     if (p.files.includes(f)) why.push('files');
+    else if (p.partial) why.push('files?'); // file list truncated: assume it may touch this file
     if (p.title.includes(mod) || p.title.includes(tail) ||
         (!/^Bundle\d+$/.test(leaf) && new RegExp(`(^|[^A-Za-z0-9_])${reEsc(leaf)}($|[^A-Za-z0-9_])`).test(p.title))) why.push('title');
     if (p.headRefName === branchOf(f) || p.headRefName.endsWith('-' + leaf) || p.headRefName.endsWith('/' + leaf)) why.push('branch');
-    if (why.length) out.push({ n: p.number, who: p.author?.login, draft: p.isDraft, why: why.join('+'), title: p.title });
+    if (why.length) out.push({ n: p.number, who: p.author?.login, draft: p.isDraft, why: why.join('+'), title: p.title, head: p.headRefName });
   }
   return out;
 }
 
-const me = () => gh('api', 'user', '--jq', '.login');
+// In Actions the job token cannot call /user; the fork owner is the repository owner there.
+const me = () => (process.env.GITHUB_ACTIONS === 'true' && process.env.GITHUB_REPOSITORY_OWNER) || gh('api', 'user', '--jq', '.login');
 
 async function main() {
   const [cmd, ...rest] = process.argv.slice(2);
+  if (['open', 'finish', 'release'].includes(cmd) && IN_CLOUD()) {
+    throw new Error(`refusing '${cmd}' in the cloud: only the workstation opens, edits or closes PRs`);
+  }
   if (cmd === 'check') {
     const prs = await openPRsWithFiles();
     let any = false;
@@ -122,32 +147,84 @@ async function main() {
   }
   if (cmd === 'publish') {
     // Open a READY "Fix <Module>" PR straight from a fix tree (no empty claim: the coordinator closes those).
-    const [treeArg] = rest;
+    // With --no-pr (or in the cloud's AI job: GITHUB_ACTIONS=true / PR120_NO_PR=1) nothing is pushed and no PR is
+    // opened. Instead, after the same checks, the commit is written as a git bundle plus a record in runs/ready/
+    // (uploaded as the `ready-branches` artifact). The publish job, or the workstation, opens the PR with
+    // tools/publish-ready.mjs. The AI job therefore needs no write access to any repository.
+    // Flags: --no-pr; --target fix/<leaf> (branch to publish as, needed when HEAD is detached, as in
+    // publish-ready's tree); --body-file <path> (PR text; default runs/<Parent-Leaf>/PR.md); --block-own (our
+    // own open PRs on other branches that touch the same files block too); --expect-files a,b (refuse unless
+    // the published files are exactly these).
+    const [treeArg, ...flags] = rest;
+    const flag = k => { const i = flags.indexOf(k); return i >= 0 ? flags[i + 1] : ''; };
+    const noPr = flags.includes('--no-pr') || IN_CLOUD();
     const env = { ...process.env, RH_REPO: treeArg || 'riemann-hypothesis' };
     const run = (...a) => execFileSync('node', [path.join(HOME, 'tools', 'rh.mjs'), 'git', ...a], { cwd: HOME, encoding: 'utf8', env }).trim();
     run('fetch', '-q', 'origin', `+refs/heads/${BASE}:refs/remotes/origin/${BASE}`);
-    const branch = run('rev-parse', '--abbrev-ref', 'HEAD');
-    if (!branch.startsWith('fix/')) throw new Error(`tree is on ${branch}, expected fix/<leaf>`);
+    const headName = run('rev-parse', '--abbrev-ref', 'HEAD');
+    const branch = flag('--target') || headName;
+    if (!/^fix\/[A-Za-z0-9_-]+$/.test(branch)) throw new Error(`tree is on ${headName}, expected fix/<leaf> (or pass --target fix/<leaf>)`);
     // Rebase FIRST: if the same change already landed upstream, git drops our commit and the diff below is
     // empty, so we never open a duplicate or empty PR.
     try { run('rebase', '-q', `origin/${BASE}`); } catch (e) { try { run('rebase', '--abort'); } catch {} throw new Error('rebase onto the fresh tip failed (conflict: someone changed the same lines); fix by hand'); }
-    const files = run('diff', '--name-only', `origin/${BASE}`, 'HEAD').split('\n').filter(Boolean);
+    const sha = run('rev-parse', 'HEAD'); // everything below checks and pushes exactly this commit
+    // What changed, with modes: only regular files (100644), only modified or added src/**/*.lean, never protected.
+    const raw = run('diff', '--raw', '--no-renames', '--no-abbrev', `origin/${BASE}`, sha).split('\n').filter(Boolean).map(l => {
+      const m = l.match(/^:(\d{6}) (\d{6}) [0-9a-f]+ [0-9a-f]+ ([A-Z])\d*\t(.+)$/);
+      return m ? { oldMode: m[1], mode: m[2], s: m[3], f: m[4] } : { s: '?', f: l };
+    });
+    const files = raw.map(x => x.f);
     if (!files.length) throw new Error('nothing to publish: no diff against the work branch');
-    if (files.some(f => !/^src\/.*\.lean$/.test(f) || /^src\/(Challenge|Statements)\.lean$/.test(f))) throw new Error(`refusing: diff touches ${files.join(', ')}`);
-    const added = run('diff', `origin/${BASE}`, 'HEAD').split('\n').filter(l => l.startsWith('+') && !l.startsWith('+++'));
-    if (added.some(l => /\b(sorry|admit|axiom|unsafe|native_decide|implemented_by)\b|@\[extern/.test(l))) throw new Error('refusing: added lines contain a forbidden keyword');
-    const prs = await openPRsWithFiles();
-    const clash = files.flatMap(f => claimsFor(f, prs).filter(c => c.who !== me()).map(c => `${f}: #${c.n} @${c.who} (${c.why})`));
-    if (clash.length) { console.log(`CLAIMED by others, not publishing:\n  ${clash.join('\n  ')}`); process.exitCode = 3; return; }
-    run('push', '-q', '--force', 'fork', `HEAD:refs/heads/${branch}`);
+    const bad = raw.filter(x => !['M', 'A'].includes(x.s) || x.mode !== '100644' || !/^src\/[A-Za-z0-9_./-]+\.lean$/.test(x.f) || x.f.includes('..') || PROTECTED.test(x.f));
+    if (bad.length) throw new Error(`refusing: diff ${bad.map(x => `${x.s} ${x.mode || ''} ${x.f}`).join(', ')} (only modified or added regular src/**/*.lean files outside the protected ones)`);
+    if (flag('--expect-files')) {
+      const want = flag('--expect-files').split(',').filter(Boolean).sort().join(',');
+      if (want !== files.slice().sort().join(',')) throw new Error(`refusing: the commit changes ${files.join(', ')}, not the recorded files`);
+    }
+    // Added text, parsed hunk by hunk: inside a hunk every '+' line is added text (even one starting with '++').
+    const added = []; let inHunk = false;
+    for (const l of run('diff', '--text', '-U0', '--no-renames', '--no-color', `origin/${BASE}`, sha).split('\n')) {
+      if (l.startsWith('diff --git ')) { inHunk = false; continue; }
+      if (l.startsWith('@@')) { inHunk = true; continue; }
+      if (inHunk && l.startsWith('+')) added.push(l.slice(1));
+      if (!inHunk && /^Binary files /.test(l)) throw new Error('refusing: binary change');
+    }
+    const hit = added.join('\n').match(BANNED);
+    if (hit) throw new Error(`refusing: added text contains a forbidden keyword (${hit[0].slice(0, 40)})`);
+    const prs = await openPRsWithFiles(true);
+    // Other people's claims always block. Our own open PRs block too, except a PR on this very branch (updated in
+    // place by the push below), unless --block-own; in the no-PR (cloud) mode every open PR blocks.
+    const login = noPr ? '' : me();
+    const blockOwn = flags.includes('--block-own');
+    const clash = files.flatMap(f => claimsFor(f, prs).filter(c => noPr || c.who !== login || c.head !== branch || blockOwn && c.head !== branch).map(c => `${f}: #${c.n} @${c.who} (${c.why})`));
+    if (clash.length) { console.log(`CLAIMED, not publishing:\n  ${clash.join('\n  ')}`); process.exitCode = 3; return; }
     const mod = modOf(files[0]);
     const leaf = modOf(files[0]).split('.').pop();
-    const bodyFile = [path.join(HOME, 'runs', leafDir(files[0]), 'PR.md'), path.join(HOME, 'runs', leaf, 'PR.md')].find(p => fs.existsSync(p));
-    if (!bodyFile) throw new Error(`missing PR text runs/${leafDir(files[0])}/PR.md (or runs/${leaf}/PR.md)`);
+    const bodyFile = flag('--body-file') ? path.resolve(flag('--body-file'))
+      : [path.join(HOME, 'runs', leafDir(files[0]), 'PR.md'), path.join(HOME, 'runs', leaf, 'PR.md')].find(p => fs.existsSync(p));
+    if (!bodyFile || !fs.existsSync(bodyFile)) throw new Error(`missing PR text runs/${leafDir(files[0])}/PR.md (or runs/${leaf}/PR.md, or --body-file)`);
     const title = files.length === 1 ? `Fix ${mod}` : `Fix ${mod} and ${files.length - 1} more`;
-    gh('pr', 'create', '--repo', UP, '--base', BASE, '--head', `${me()}:${branch}`, '--title', title, '--body-file', bodyFile);
+    if (noPr) {
+      // No push: hand the checked commit over as a git bundle next to its record (both go into the artifact).
+      const runId = process.env.GITHUB_RUN_ID || String(Date.now());
+      const attempt = process.env.GITHUB_RUN_ATTEMPT || '1';
+      const id = `${branch.slice(4)}-r${runId}-${attempt}`;
+      const base = run('rev-parse', `origin/${BASE}`);
+      const dir = path.join(HOME, 'runs', 'ready'); fs.mkdirSync(dir, { recursive: true });
+      const bundle = path.join(dir, `${id}.bundle`);
+      run('update-ref', `refs/pr120/${id}`, sha);
+      try { run('bundle', 'create', bundle.replace(/\\/g, '/'), `refs/pr120/${id}`, `^${base}`); }
+      finally { try { run('update-ref', '-d', `refs/pr120/${id}`); } catch {} }
+      const rec = { id, target: branch, title, files, head: sha, base, bundle: `${id}.bundle`,
+        body: fs.readFileSync(bodyFile, 'utf8'), time: new Date().toISOString(), run: runId, attempt };
+      fs.writeFileSync(path.join(dir, `${id}.json`), JSON.stringify(rec, null, 1));
+      console.log(`READY ${id} -> ${branch} (${files.length} file(s), head ${sha.slice(0, 10)}): bundled for the publish job; nothing pushed, no PR opened`);
+      return;
+    }
+    run('push', '-q', '--force', 'fork', `${sha}:refs/heads/${branch}`);
+    gh('pr', 'create', '--repo', UP, '--base', BASE, '--head', `${login}:${branch}`, '--title', title, '--body-file', bodyFile);
     const n = JSON.parse(gh('pr', 'list', '-R', UP, '--state', 'open', '--head', branch, '--json', 'number,url'))[0];
-    console.log(`PUBLISHED #${n.number} ${n.url} (ready) ${files.length} file(s), head ${run('rev-parse', '--short', 'HEAD')}`);
+    console.log(`PUBLISHED #${n.number} ${n.url} (ready) ${files.length} file(s), head ${sha.slice(0, 10)}`);
     return;
   }
   if (cmd === 'release') {

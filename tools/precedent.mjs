@@ -21,13 +21,16 @@ const BASE = 'f941065836'; // "Collapse thin wrappers and consolidate leaf modul
 
 const args = process.argv.slice(2);
 let max = 6, refresh = false; const words = [];
+let fromFile = '', fromStdin = false;
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--max') max = +args[++i];
   else if (args[i] === '--refresh') refresh = true;
+  else if (args[i] === '--file') fromFile = args[++i];   // error text from a file: keeps upstream text off the shell command line
+  else if (args[i] === '--stdin') fromStdin = true;
   else words.push(args[i]);
 }
-const err = words.join(' ');
-if (!err) { console.error('usage: node tools/precedent.mjs "<error text>" [--max N] [--refresh]'); process.exit(2); }
+const err = (fromFile ? fs.readFileSync(fromFile, 'utf8') : fromStdin ? fs.readFileSync(0, 'utf8') : words.join(' ')).replace(/\s+/g, ' ').trim();
+if (!err) { console.error('usage: node tools/precedent.mjs ("<error text>" | --file <path> | --stdin) [--max N] [--refresh]'); process.exit(2); }
 
 const git = (...a) => execFileSync('git', ['-C', REPO, ...a], { encoding: 'utf8', maxBuffer: 1 << 28 });
 

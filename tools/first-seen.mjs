@@ -9,6 +9,7 @@
 // 10:21 UTC on 2026-11-24) while the list is republished, so the Open table carries errors that later commits
 // fixed. Reads GitHub (list history) and the local clone; writes nothing.
 import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -37,7 +38,15 @@ const commits = JSON.parse(gh('api', `repos/rohanarun/alpoge-rh-replay/commits?p
 const firstSeen = new Map();
 for (const c of commits) {
   let md = '';
-  try { md = gh('api', `repos/rohanarun/alpoge-rh-replay/contents/PR120-BUGS.md?ref=${c.sha}`, '-H', 'Accept: application/vnd.github.raw'); } catch { continue; }
+  // List versions never change: cache them by commit sha (saves ~100 API calls per run; the Actions job token
+  // allows 1,000 requests an hour).
+  const cacheDir = path.join(path.dirname(REPO), 'runs', 'listhist'); fs.mkdirSync(cacheDir, { recursive: true });
+  const cf = path.join(cacheDir, `${String(c.sha).replace(/[^0-9a-f]/g, '').slice(0, 40)}.md`);
+  if (fs.existsSync(cf)) md = fs.readFileSync(cf, 'utf8');
+  else {
+    try { md = gh('api', `repos/rohanarun/alpoge-rh-replay/contents/PR120-BUGS.md?ref=${c.sha}`, '-H', 'Accept: application/vnd.github.raw'); } catch { continue; }
+    try { fs.writeFileSync(cf, md); } catch {}
+  }
   for (const r of parseOpen(md)) if (!firstSeen.has(key(r))) firstSeen.set(key(r), c.date);
 }
 const live = parseOpen(gh('api', 'repos/rohanarun/alpoge-rh-replay/contents/PR120-BUGS.md', '-H', 'Accept: application/vnd.github.raw'));
