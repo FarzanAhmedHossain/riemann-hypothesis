@@ -216,6 +216,7 @@ jobs:
         id: count
         if: always() && steps.leak.outcome == 'success'
         run: |
+          if [ -f runs/cloud-report.md ]; then cp runs/cloud-report.md runs/ready/cloud-report.md; fi   # one flat artifact
           n=$(ls runs/ready/*.json 2>/dev/null | wc -l | tr -d ' ')
           echo "ready=${n:-0}" >> "$GITHUB_OUTPUT"
           echo "### pr120-cloud: ${n:-0} ready fix(es) for the publish job" >> "$GITHUB_STEP_SUMMARY"
@@ -225,10 +226,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ready-branches
-          path: |
-            runs/ready/*.json
-            runs/ready/*.bundle
-            runs/cloud-report.md
+          path: runs/ready/
           if-no-files-found: ignore
           retention-days: 7
 
