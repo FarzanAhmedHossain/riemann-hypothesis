@@ -61,7 +61,7 @@ jobs:
           echo "has_key=$HAS_KEY" >> "$GITHUB_OUTPUT"
 
       - name: Check out the toolkit (automation branch)
-        if: steps.gate.outputs.ok == 'true' && env.MODE != 'selftest'
+        if: steps.gate.outputs.ok == 'true'
         uses: actions/checkout@v4
         with:
           ref: automation
