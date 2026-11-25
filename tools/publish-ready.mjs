@@ -35,7 +35,7 @@ const HOME = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FORK = process.env.FORK_REPO || 'FarzanAhmedHossain/riemann-hypothesis';
 const OWNER = FORK.split('/')[0].toLowerCase();
 const UP = 'rohanarun/riemann-hypothesis';
-const WF_PATHS = ['.github/workflows/pr120-cloud.yml', '.github/workflows/pr120-attack.yml']; // attack runs upload only build-verified records
+const WF_PATHS = ['.github/workflows/pr120-cloud.yml', '.github/workflows/pr120-attack.yml', '.github/workflows/pr120-hygiene.yml']; // attack and hygiene runs upload only build-verified records
 const argv = process.argv.slice(2);
 const opt = k => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : ''; };
 const DRY = argv.includes('--dry');
@@ -154,7 +154,8 @@ function publishRecord(runKey, rec, dir) {
     if (DRY) { say(`WOULD PUBLISH ${tag}: ${clean(rec.title, 200)} (bundle verified)`); return; }
     let out = '';
     try {
-      out = node(['tools/claim.mjs', 'publish', `wt/${TREE}`, '--target', rec.target, '--body-file', bodyFile, '--block-own', '--expect-files', rec.files.join(',')],
+      out = node(['tools/claim.mjs', 'publish', `wt/${TREE}`, '--target', rec.target, '--body-file', bodyFile, '--block-own', '--expect-files', rec.files.join(','),
+        ...(rec.title.startsWith('Fix ') ? [] : ['--title', rec.title])],
         { PR120_NO_PR: '', GITHUB_ACTIONS: '' });
     } catch (e) {
       const so = String(e.stdout || '').trim(), se = String(e.stderr || '').trim();

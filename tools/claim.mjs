@@ -151,7 +151,7 @@ async function main() {
     // Flags: --no-pr; --target fix/<leaf> (branch to publish as, needed when HEAD is detached, as in
     // publish-ready's tree); --body-file <path> (PR text; default runs/<Parent-Leaf>/PR.md); --block-own (our
     // own open PRs on other branches that touch the same files block too); --expect-files a,b (refuse unless
-    // the published files are exactly these).
+    // the published files are exactly these); --title <text> (instead of "Fix <Module>").
     const [treeArg, ...flags] = rest;
     const flag = k => { const i = flags.indexOf(k); return i >= 0 ? flags[i + 1] : ''; };
     const noPr = flags.includes('--no-pr') || IN_CLOUD();
@@ -200,7 +200,13 @@ async function main() {
     const bodyFile = flag('--body-file') ? path.resolve(flag('--body-file'))
       : [path.join(HOME, 'runs', leafDir(files[0]), 'PR.md'), path.join(HOME, 'runs', leaf, 'PR.md')].find(p => fs.existsSync(p));
     if (!bodyFile || !fs.existsSync(bodyFile)) throw new Error(`missing PR text runs/${leafDir(files[0])}/PR.md (or runs/${leaf}/PR.md, or --body-file)`);
-    const title = files.length === 1 ? `Fix ${mod}` : `Fix ${mod} and ${files.length - 1} more`;
+    let title = files.length === 1 ? `Fix ${mod}` : `Fix ${mod} and ${files.length - 1} more`;
+    // --title: a different one-line title (hygiene PRs). Printable, no mentions or code spans, 10-200 characters.
+    if (flag('--title')) {
+      const t = flag('--title');
+      if (!/^[^\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069@`]{10,200}$/u.test(t)) throw new Error('refusing: bad --title');
+      title = t;
+    }
     if (noPr) {
       // No push: hand the checked commit over as a git bundle next to its record (both go into the artifact).
       const runId = process.env.GITHUB_RUN_ID || String(Date.now());

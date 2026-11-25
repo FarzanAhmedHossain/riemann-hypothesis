@@ -1,0 +1,282 @@
+# Hygiene pipeline, no AI anywhere: make redundant global instances local, only where Lean confirms they are redundant.
+#   select   (read token)          tools/instance-audit.mjs: global default-priority instances of Prop classes with
+#                                  all-variable arguments, seen by many modules, not tried at this file content yet
+#   verify   (no secrets, matrix)  `instance` -> `local instance` (tools/hygiene-apply.mjs, before the sandbox owns the
+#                                  tree), `lake build <Module>`, then `lake env lean` on a check file that imports the
+#                                  module and asks for the same instance from the same hypotheses with inferInstance
+#   publish  (PR120_PAT)           only candidates whose own verify job passed and uploaded its verdict while it ran
+#   record                         remember every tried candidate; retried only after its file changes
+# Every `lake` command runs in the Docker sandbox (tools/lake-sandbox.sh). See tools/instance-audit.mjs for why a
+# passing check means no search anywhere loses an instance.
+name: pr120-hygiene
+
+on:
+  workflow_dispatch:
+    inputs:
+      k:
+        description: "how many candidates to try (1-8)"
+        default: "4"
+      maxc:
+        description: "largest build cone (project modules) to attempt"
+        default: "6000"
+      publish:
+        description: "open PRs for verified changes (false = dry run: verify only)"
+        default: "true"
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: pr120-hygiene
+  cancel-in-progress: false
+
+env:
+  UPSTREAM: rohanarun/riemann-hypothesis
+  BRANCH: opt/collapse-and-consolidate-4.36
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    outputs:
+      targets: ${{ steps.pick.outputs.targets }}
+      tip: ${{ steps.pick.outputs.tip }}
+      n: ${{ steps.pick.outputs.n }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      FORK_REPO: ${{ github.repository }}
+      GIT_NAME: ${{ github.repository_owner }}
+      GIT_EMAIL: ${{ github.repository_owner_id }}+${{ github.repository_owner }}@users.noreply.github.com
+      IN_K: ${{ github.event.inputs.k }}
+      IN_MAXC: ${{ github.event.inputs.maxc }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: automation, persist-credentials: false }
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Restore the hygiene memory
+        uses: actions/cache/restore@v4
+        with:
+          path: runs/hygiene-done.txt
+          key: pr120-hygiene-done-${{ github.run_id }}
+          restore-keys: pr120-hygiene-done-
+      - name: Pick candidates
+        id: pick
+        run: |
+          node -e "const k=Number(process.env.IN_K||4),c=Number(process.env.IN_MAXC||6000);if(!(Number.isInteger(k)&&k>=1&&k<=8&&Number.isInteger(c)&&c>=1&&c<=30000)){console.error('bad k or maxc');process.exit(1)}"
+          bash tools/bootstrap.sh
+          mkdir -p runs/scan-cache
+          node tools/instance-audit.mjs --json --k "${IN_K:-4}" --maxc "${IN_MAXC:-6000}" > targets.json 2> select.log || { cat select.log; exit 1; }
+          cat select.log
+          node -e "
+            const fs=require('fs'),cp=require('child_process'),c=require('crypto');
+            const T=JSON.parse(fs.readFileSync('targets.json','utf8'));
+            if(!Array.isArray(T))process.exit(1);
+            T.forEach((t,i)=>{fs.writeFileSync('t.json',JSON.stringify(t));cp.execFileSync('node',['tools/hygiene-apply.mjs','validate','t.json'],{stdio:'inherit'});});
+            const M=T.map((t,i)=>({idx:i,module:t.module,key:c.createHash('sha1').update(t.module).digest('hex').slice(0,16)}));
+            fs.appendFileSync(process.env.GITHUB_OUTPUT,'targets='+JSON.stringify(M)+'\nn='+M.length+'\n');"
+          echo "tip=$(git -C riemann-hypothesis rev-parse origin/$BRANCH)" >> "$GITHUB_OUTPUT"
+          { echo "### pr120-hygiene candidates"; sed 's/^/    /' select.log; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with: { name: hygiene-targets, path: targets.json, retention-days: 7 }
+
+  verify:
+    name: verify-${{ matrix.t.idx }}   # publish checks this job's result and time window for its verdict artifact
+    needs: select
+    if: ${{ !cancelled() && needs.select.result == 'success' && needs.select.outputs.n != '0' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        t: ${{ fromJSON(needs.select.outputs.targets) }}
+    env:
+      IDX: ${{ matrix.t.idx }}
+      MOD: ${{ matrix.t.module }}
+      GIT_NAME: ${{ github.repository_owner }}
+      GIT_EMAIL: ${{ github.repository_owner_id }}+${{ github.repository_owner }}@users.noreply.github.com
+    steps:
+      - name: Free disk space
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost || true
+      - name: Check out the toolkit
+        uses: actions/checkout@v4
+        with: { ref: automation, persist-credentials: false, path: toolkit }
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Check out the branch at the selected tip
+        uses: actions/checkout@v4
+        with: { repository: "${{ env.UPSTREAM }}", ref: "${{ needs.select.outputs.tip }}", fetch-depth: 1, persist-credentials: false, path: src-tree }
+      - uses: actions/download-artifact@v4
+        with: { name: hygiene-targets, path: sel }
+      - name: Apply the change, commit and bundle it (as the runner, before the sandbox owns the tree)
+        id: apply
+        run: |
+          case "$IDX" in ''|*[!0-9]*) exit 1;; esac
+          node -e "const t=require('./sel/targets.json')[Number(process.env.IDX)];if(!t||t.module!==process.env.MOD)process.exit(1);require('fs').writeFileSync('target.json',JSON.stringify(t))"
+          node toolkit/tools/hygiene-apply.mjs validate target.json
+          mkdir -p out
+          id=$(node toolkit/tools/hygiene-apply.mjs apply src-tree target.json out)
+          node toolkit/tools/diff-gate.mjs src-tree "out/$id.json"
+          node toolkit/tools/hygiene-apply.mjs check-diff src-tree "out/$id.json"
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+      - name: Restore a project build of this tip (never saved back: this tree has the change)
+        uses: actions/cache/restore@v4
+        with:
+          path: src-tree/.lake/build
+          key: pr120-lake-${{ needs.select.outputs.tip }}-${{ matrix.t.key }}
+          restore-keys: |
+            pr120-lake-${{ needs.select.outputs.tip }}-
+            pr120-lake-
+      - name: Sandbox, dependencies and the Mathlib cache
+        run: |
+          bash toolkit/tools/lake-sandbox.sh setup src-tree
+          rc=$(bash toolkit/tools/lake-sandbox.sh run src-tree 40 deps.log env true); tail -3 deps.log; [ "$rc" = 0 ]
+          rc=$(bash toolkit/tools/lake-sandbox.sh run src-tree/.lake/packages/mathlib 40 cache.log exe cache get); tail -3 cache.log; [ "$rc" = 0 ]
+      - name: Build the module with the change
+        id: build
+        run: |
+          rc=$(bash toolkit/tools/lake-sandbox.sh run src-tree 230 build.log build "$MOD")
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+      - name: Compile the check file (rewritten from the selected target after the build container exited)
+        id: check
+        if: steps.build.outputs.rc == '0'
+        run: |
+          node -e "process.stdout.write(require('./target.json').check)" | sudo tee src-tree/.pr120-hygiene/Check.lean > /dev/null
+          sudo chown 1000:1000 src-tree/.pr120-hygiene/Check.lean
+          rc=$(bash toolkit/tools/lake-sandbox.sh run src-tree 30 check.log env lean .pr120-hygiene/Check.lean)
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+      - name: Verdict
+        if: ${{ !cancelled() && steps.apply.outputs.id != '' }}
+        env:
+          RID: ${{ steps.apply.outputs.id }}
+          RC_BUILD: ${{ steps.build.outputs.rc }}
+          RC_CHECK: ${{ steps.check.outputs.rc }}
+        run: |
+          node -e "
+            const fs=require('fs');const t=require('./target.json');
+            const b=process.env.RC_BUILD==='0', c=process.env.RC_CHECK==='0';
+            const status=b&&c?'ok':(b?'check-failed':'build-failed');
+            fs.writeFileSync('out/verdict.json',JSON.stringify({id:process.env.RID,module:t.module,file:t.file,line:t.line,status,run:process.env.GITHUB_RUN_ID}));
+            console.log(process.env.RID+': '+status+' ('+t.cls+' '+(t.name||'')+' at '+t.file+':'+t.line+')');" | tee -a "$GITHUB_STEP_SUMMARY"
+          tail -c 60000 build.log > out/build.log 2>/dev/null || true
+          tail -c 20000 check.log > out/check.log 2>/dev/null || true
+          if [ -f check.log ]; then { echo '```'; tail -n 15 check.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() && steps.apply.outputs.id != '' }}
+        with: { name: "verify-${{ matrix.t.idx }}", path: out/, retention-days: 7 }
+
+  publish:
+    needs: [select, verify]
+    if: ${{ !cancelled() && needs.select.result == 'success' && needs.select.outputs.n != '0' && github.event.inputs.publish != 'false' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: pr120
+    env:
+      GH_TOKEN: ${{ secrets.PR120_PAT }}
+      FORK_REPO: ${{ github.repository }}
+      GIT_NAME: ${{ github.repository_owner }}
+      GIT_EMAIL: ${{ github.repository_owner_id }}+${{ github.repository_owner }}@users.noreply.github.com
+      PUBLISH_ONLY: "1"
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      TARGETS: ${{ needs.select.outputs.targets }}
+    steps:
+      - name: Check the publishing token
+        id: gate
+        env: { HAS_PAT: "${{ secrets.PR120_PAT != '' }}" }
+        run: echo "ok=$HAS_PAT" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with: { ref: automation, persist-credentials: false }
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - uses: actions/download-artifact@v4
+        with: { name: hygiene-targets, path: sel }
+      - uses: actions/download-artifact@v4
+        with: { pattern: "verify-*", path: verdicts }
+      - name: Keep only candidates whose own verify job passed (verdict uploaded while that job ran)
+        id: keep
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          mkdir -p incoming verdicts
+          gh api --paginate "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs?per_page=100" --jq '.jobs[]|[.name,.conclusion // "",.started_at // "",.completed_at // ""]|@tsv' > jobs.tsv
+          gh api --paginate "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts?per_page=100" --jq '.artifacts[]|[.name,.created_at]|@tsv' > artifacts.tsv
+          node -e "
+            const fs=require('fs');const M=JSON.parse(process.env.TARGETS);const S=JSON.parse(fs.readFileSync('sel/targets.json','utf8'));let n=0;
+            const rows=f=>fs.readFileSync(f,'utf8').split('\n').filter(Boolean).map(l=>l.split('\t'));
+            const jobs=Object.fromEntries(rows('jobs.tsv').map(([name,c,s,e])=>[name,{c,s:Date.parse(s),e:Date.parse(e)}]));
+            const made={}; for (const [name,t] of rows('artifacts.tsv')) (made[name] ||= []).push(Date.parse(t));
+            for (const m of M) {
+              const t=S[m.idx]; const name='verify-'+m.idx, j=jobs[name], times=made[name]||[];
+              if (!t||t.module!==m.module) { console.log('skip '+m.idx+': target mismatch'); continue; }
+              const ok=j&&j.c==='success'&&times.length===1&&times[0]>=j.s&&times[0]<=j.e+60000;
+              if (!ok) { console.log('not verified: '+t.module+' (no artifact '+name+' from its own successful job)'); continue; }
+              let v; try { v=JSON.parse(fs.readFileSync('verdicts/'+name+'/verdict.json','utf8')); } catch { console.log('not verified: '+t.module+' (no verdict)'); continue; }
+              if (v.module!==t.module||v.file!==t.file||v.line!==t.line||v.status!=='ok'||!/^[A-Za-z0-9_-]+-r\d+-\d+$/.test(v.id||'')) { console.log('not verified: '+t.module+' ('+v.status+')'); continue; }
+              let rec; try { rec=JSON.parse(fs.readFileSync('verdicts/'+name+'/'+v.id+'.json','utf8')); } catch { console.log('no record for '+v.id); continue; }
+              if (rec.id!==v.id||JSON.stringify(rec.files)!==JSON.stringify([t.file])||rec.module!==t.module||rec.line!==t.line) { console.log('record mismatch for '+v.id); continue; }
+              rec.body=String(rec.body).trimEnd()+'\n\nBuilt: \`lake build '+t.module+'\` succeeded with this change, and the check file above compiled against it (\`lake env lean\`), on a GitHub Actions runner ('+process.env.RUN_URL+').\n';
+              fs.writeFileSync('incoming/'+v.id+'.json',JSON.stringify(rec,null,1));
+              fs.copyFileSync('verdicts/'+name+'/'+v.id+'.bundle','incoming/'+v.id+'.bundle'); n++;
+              console.log('verified: '+v.id);
+            }
+            console.log(n+' verified change(s)');fs.appendFileSync(process.env.GITHUB_OUTPUT,'n='+n+'\n');" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Upload the verified records (the workstation's fallback reads these)
+        if: steps.keep.outputs.n != '0'
+        uses: actions/upload-artifact@v4
+        with: { name: ready-branches, path: incoming/, retention-days: 7 }
+      - name: Fresh partial clone
+        if: steps.keep.outputs.n != '0' && steps.gate.outputs.ok == 'true'
+        run: bash tools/bootstrap.sh
+      - name: Re-check each change (exactly one `instance` -> `local instance` line)
+        if: steps.keep.outputs.n != '0' && steps.gate.outputs.ok == 'true'
+        run: |
+          for rec in incoming/*.json; do
+            id=$(basename "$rec" .json)
+            git -C riemann-hypothesis -c core.hooksPath=/dev/null bundle verify -q "../incoming/$id.bundle" \
+              && git -C riemann-hypothesis -c core.hooksPath=/dev/null fetch -q "../incoming/$id.bundle" "refs/pr120/$id:refs/pr120-chk/$id" \
+              && node tools/hygiene-apply.mjs check-diff riemann-hypothesis "$rec" \
+              || { echo "dropped $id: failed the re-check"; rm -f "$rec" "incoming/$id.bundle"; }
+          done
+      - name: Publish (rebase, check, push fix/<leaf>, open the PR)
+        if: steps.keep.outputs.n != '0' && steps.gate.outputs.ok == 'true'
+        run: |
+          node tools/publish-ready.mjs --from-dir incoming 2>&1 | tee publish.log
+          grep -E '^(PUBLISHED|SKIPPED|RETRY|FAILED)' publish.log | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY" || true
+
+  record:
+    needs: [select, verify]
+    if: ${{ !cancelled() && needs.select.result == 'success' && needs.select.outputs.n != '0' && github.event.inputs.publish != 'false' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TARGETS: ${{ needs.select.outputs.targets }}
+      TIP: ${{ needs.select.outputs.tip }}
+    steps:
+      - name: Restore the hygiene memory
+        uses: actions/cache/restore@v4
+        with:
+          path: runs/hygiene-done.txt
+          key: pr120-hygiene-done-${{ github.run_id }}
+          restore-keys: pr120-hygiene-done-
+      - uses: actions/download-artifact@v4
+        with: { name: hygiene-targets, path: sel }
+      - uses: actions/download-artifact@v4
+        with: { pattern: "verify-*", path: verdicts }
+      - name: Remember every candidate that got a verdict
+        run: |
+          mkdir -p runs verdicts
+          touch runs/hygiene-done.txt
+          node -e "
+            const fs=require('fs');const M=JSON.parse(process.env.TARGETS);const S=JSON.parse(fs.readFileSync('sel/targets.json','utf8'));const out=[];
+            if (!/^[0-9a-f]{40}$/.test(process.env.TIP)) process.exit(1);
+            for (const m of M) {
+              const t=S[m.idx]; let v; try { v=JSON.parse(fs.readFileSync('verdicts/verify-'+m.idx+'/verdict.json','utf8')); } catch { continue; }
+              if (!t||v.module!==t.module||!/^[\p{L}\p{N}_.']+$/u.test(t.module)||!Number.isInteger(t.line)) continue;
+              out.push(t.module+':'+t.line+' '+process.env.TIP); console.log(v.status+': '+t.module+':'+t.line);
+            }
+            fs.appendFileSync('runs/hygiene-done.txt', out.map(x=>x+'\n').join(''));" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Save the hygiene memory
+        uses: actions/cache/save@v4
+        with:
+          path: runs/hygiene-done.txt
+          key: pr120-hygiene-done-${{ github.run_id }}
